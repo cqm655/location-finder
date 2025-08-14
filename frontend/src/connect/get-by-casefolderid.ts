@@ -7,9 +7,8 @@ export const useGetByCaseFolderId = () => {
 
     const casefolderId = useStateCasefolderId((state) => state.casefolderId);
     const setLoading = useStateCasefolderId((state) => state.setLoading);
-    const [resp, setResp] = useState<ApiCaseFolderIdResponse>();
-
     const [error, setError] = useState<string | null>(null);
+    const [resp, setResp] = useState<ApiCaseFolderIdResponse>();
 
     useEffect(() => {
         const getByCaseFolderId = async () => {

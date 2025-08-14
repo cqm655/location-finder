@@ -9,8 +9,10 @@ export const ToogleSideBar = () => {
     const {openSidebar} = useStateToggleSideBar()
 
     return (
-        <Button onClick={openSidebar}
-                style={{right: "15%"}}>{isOpen ? <MenuOpenIcon fontSize="large" color="error"/> :
-            <MenuIcon color="error" fontSize="large"/>}</Button>
+        <div style={{position: "relative", right: "15%"}}>
+            <Button onClick={openSidebar}
+                    style={{right: "15%"}}>{isOpen ? <MenuOpenIcon fontSize="large" color="error"/> :
+                <MenuIcon color="error" fontSize="large"/>}</Button>
+        </div>
     )
 }

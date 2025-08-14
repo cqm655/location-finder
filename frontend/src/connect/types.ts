@@ -18,3 +18,30 @@ interface Geometry {
     aml: []
 }
 
+export interface ApiPolygoneRequest {
+    type: string;
+    geometry: {
+        latitude: number[],
+        longitude: number[],
+    },
+    startDate: string;
+    endDate: string;
+    CasefolderId?: string;
+    CaseIndex1Name?: string;
+    CaseIndex2Name?: string;
+    CaseTypeId?: number;
+    CreatedDate?: Date;
+    XCoordinate?: number;
+    YCoordinate?: number;
+}
+
+export interface ApiPolygoneResponse {
+    CasefolderId: string;
+    CaseIndex1Name: string;
+    CaseIndex2Name: string;
+    CaseTypeId: number;
+    CreatedDate: Date;
+    XCoordinate: number;
+    YCoordinate: number;
+}
+

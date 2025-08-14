@@ -111,11 +111,9 @@ export class GetCasesByArea {
     requestByLocationDto: RequestByLocationDto,
   ): Promise<InfoByLocationResponse[]> {
     const query = getInfoCasesByArea;
-
     const geometry: Polygon = requestByLocationDto.geometry as Polygon;
     const XCoordinates = geometry.latitude;
     const YCoordinates = geometry.longitude;
-
     const polygon: Polygon = {
       latitude: XCoordinates,
       longitude: YCoordinates,
@@ -225,13 +223,18 @@ export class GetCasesByArea {
     let inside = false;
     const { latitude, longitude } = point;
 
-    for (
-      let i = 0, j = polygon.latitude.length - 1;
-      i < polygon.latitude.length;
-      j = i++
-    ) {
-      const { latitude: lat1, longitude: lon1 } = polygon[i];
-      const { latitude: lat2, longitude: lon2 } = polygon[j];
+    const latArr = polygon.latitude;
+    const lonArr = polygon.longitude;
+
+    if (!latArr || !lonArr || latArr.length === 0 || lonArr.length === 0) {
+      return false; // poligon invalid
+    }
+
+    for (let i = 0, j = latArr.length - 1; i < latArr.length; j = i++) {
+      const lat1 = latArr[i];
+      const lon1 = lonArr[i];
+      const lat2 = latArr[j];
+      const lon2 = lonArr[j];
 
       const intersect =
         lat1 > latitude !== lat2 > latitude &&

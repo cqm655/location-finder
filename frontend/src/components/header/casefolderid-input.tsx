@@ -6,9 +6,9 @@ import {useStateCasefolderId} from "../../store/useStateGetByCasefolderId.ts";
 export const CasefolderidInput = () => {
     const setCaseFolderId = useStateCasefolderId((state) => state.setCasefolderId)
     const isLoading = useStateCasefolderId((state) => state.isLoading)
-    console.log(isLoading)
     return (
-        <div className="search" style={{width: "33.33%", display: "flex", alignItems: "center"}}>
+        <div className="search"
+             style={{width: "33.33%", display: "flex", alignItems: "center", position: "relative", left: "15%"}}>
             {isLoading && <CircularProgress
                 size={"20px"}
                 style={{marginRight: "10px"}}

@@ -6,7 +6,7 @@ import {Outlet} from "react-router";
 
 function App() {
     const {isOpen} = useStateToggleSideBar();
-    const sidebarWidth = isOpen ? 300 : 10;
+    const sidebarWidth = isOpen ? 300 : 0;
 
     return (
         <div style={{
@@ -37,11 +37,9 @@ function App() {
                 <div
                     style={{
                         flex: 1,
-                        backgroundColor: 'blue',
                         height: '100%'
                     }}
                 >
-                    {/* Aici pui conținutul principal */}
                     <Outlet/>
                 </div>
             </div>

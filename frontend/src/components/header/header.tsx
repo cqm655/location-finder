@@ -14,7 +14,8 @@ export const Header = () => {
             height: "70px",
             backgroundColor: "#fff",
             alignItems: "center"
-        }}><Logo/>
+        }}>
+            <Logo/>
             <ToogleSideBar/>
             <MapLink/>
             <CasefolderidInput/>
