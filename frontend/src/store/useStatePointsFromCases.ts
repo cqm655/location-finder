@@ -1,18 +1,26 @@
 import {create} from "zustand";
 
-type Point = {
+export interface PointStore {
     lng: number;
     lat: number;
-};
+    caseIndex1Name: string;
+    caseIndex2Name: string;
+    created: Date;
+    caseFolderId: number;
+    caseTypeId: number;
+    creator: string;
+    XCoordinate: number;
+    YCoordinate: number;
+}
 
-type CasePointsMapState = {
-    point: Point[],
-    setPoint: (newPoint: Point[]) => void,
+interface CasePointsMapStore {
+    point: PointStore[],
+    setPoint: (newPoint: PointStore[]) => void,
     resetPoints: () => void,
 }
 
-export const useStatePointsFromCases = create<CasePointsMapState>((set) => ({
+export const useStatePointsFromCases = create<CasePointsMapStore>((set) => ({
     point: [],
-    setPoint: (newPoint: Point[]) => set(({point: newPoint})),
+    setPoint: (newPoint: PointStore[]) => set(({point: newPoint})),
     resetPoints: () => set({point: []})
 }))

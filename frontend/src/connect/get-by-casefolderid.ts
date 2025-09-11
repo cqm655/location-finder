@@ -10,12 +10,14 @@ export const useGetByCaseFolderId = () => {
     const [error, setError] = useState<string | null>(null);
     const [resp, setResp] = useState<ApiCaseFolderIdResponse>();
 
+
     useEffect(() => {
         const getByCaseFolderId = async () => {
             setLoading(true);
             try {
                 const response = await apiRequest<ApiCaseFolderIdResponse>(`folderId/${casefolderId}`, 'GET')
                 setResp(response)
+
             } catch (e) {
                 setError(`Something went wrong while retrieving ${casefolderId}, ${e}`)
             } finally {

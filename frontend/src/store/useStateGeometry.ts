@@ -1,5 +1,6 @@
-import type {ApiPolygoneResponse} from "../connect/types.ts";
 import {create} from "zustand";
+import type {ApiPolygoneResponse} from "../connect/types.ts";
+
 
 interface GeometryStore {
     isLoading: boolean;

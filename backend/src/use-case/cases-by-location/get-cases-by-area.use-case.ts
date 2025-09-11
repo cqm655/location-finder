@@ -10,13 +10,13 @@ import { Injectable } from '@nestjs/common';
 import { getInfoCasesByArea } from '../../db/scripts/get-info-cases';
 
 export interface InfoByLocationResponse {
-  CaseFolderId: number;
-  CaseTypeId: number;
-  Created: string;
+  caseFolderId: number;
+  caseTypeId: number;
+  created: string;
   XCoordinate: number;
   YCoordinate: number;
-  CaseIndex1Name: string;
-  CaseIndex2Name: string;
+  caseIndex1Name: string;
+  caseIndex2Name: string;
 }
 
 interface ParamList {

@@ -7,7 +7,7 @@ import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import utc from "dayjs/plugin/utc";
 import {DateTimeField} from "@mui/x-date-pickers";
 import './style.css'
-import {useStatePointsFromCases} from "../../store/useStatePointsFromCases.ts";
+import {useStateSetSideBardAccordionData} from "../../store/useStateSetSideBardAccordionData.ts";
 
 dayjs.extend(utc);
 
@@ -29,7 +29,7 @@ export const MapControls = ({
 
     const [startTime, setStartTime] = useState<Dayjs | null>(dayjs().startOf('day').add(3, 'hour'));
     const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day').add(3, 'hour'));
-
+    const data = useStateSetSideBardAccordionData((state) => state.data);
     const geometry = useStateGeometry((state) => state.geometry);
 
     const requestPayload = useMemo(() => ({
@@ -45,7 +45,7 @@ export const MapControls = ({
     const onSearch = () => {
         console.log("Trimis la backend:", requestPayload);
         console.log("Răspuns backend:", resp);
-        // @ts-ignore
+        console.log("Răspuns backend:", data);
 
         console.log("Error backend:", error);
 

@@ -5,6 +5,7 @@ import { InfoByCaseFolderId } from './use-case/logs-by-folder-id/get-logs-by-cas
 import { RequestByLocationDto } from './dto/request-by-location.dto';
 import { ResponseCaseFolderIdDto } from './dto/response-case-folder-id.dto';
 import { InfoByLocationResponse } from './use-case/cases-by-location/get-cases-by-area.use-case';
+import { ShapeResponseDto } from './dto/response-geometry-by-case-folder-id';
 
 @Controller({
   path: '/by-location',
@@ -31,5 +32,12 @@ export class AppController {
   @Get('/logs/:id')
   async getLogs(@Param('id') id: number): Promise<InfoByCaseFolderId[]> {
     return await this.appService.getLogsByCaseFolder(id);
+  }
+
+  @Get('/geometry/:id')
+  async getGeometryByCaseFolderId(
+    @Param('id') id: number,
+  ): Promise<ShapeResponseDto[]> {
+    return await this.appService.getGeometryByCaseFolderId(id);
   }
 }

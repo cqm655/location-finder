@@ -1,12 +1,12 @@
 import axios, {type AxiosInstance, type AxiosResponse} from "axios";
-import type {ApiPolygoneRequest} from "./types.ts";
+import type {ApiCaseFolderIdResponse} from "./types.ts";
 
 const apiClient: AxiosInstance = axios.create({
-    baseURL: 'http://localhost:3003/by-location',
+    baseURL: 'http://localhost:3004/by-location',
     headers: {'Content-Type': 'application/json'}
 })
 
-export const apiRequest = async <T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE", data?: ApiPolygoneRequest): Promise<T> => {
+export const apiRequest = async <T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE", data?: ApiCaseFolderIdResponse): Promise<T> => {
     const response: AxiosResponse<T> = await apiClient({
         method,
         url,
