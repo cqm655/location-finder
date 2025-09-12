@@ -30,7 +30,7 @@ export const Map = () => {
 
         map.current = new maptilersdk.Map({
             container: mapContainer.current!,
-            style: maptilersdk.MapStyle.STREETS,
+            style: maptilersdk.MapStyle.BASIC,
             center: [28.907089, 47.00367],
             zoom: 8,
         });
@@ -127,35 +127,26 @@ export const Map = () => {
         map.current.flyTo({center: [YCoordinate, XCoordinate], zoom: 14});
     }, [addPointOnMap]);
 
+
+    const [polygonFC, setPolygonFC] = useState<FeatureCollection<Geometry>>({type: 'FeatureCollection', features: []});
+    const [pointFC, setPointFC] = useState<FeatureCollection<Geometry>>({type: 'FeatureCollection', features: []});
+
     useEffect(() => {
-        if (!map.current || !addGeometriesFromCaseFolderId) return;
+        if (!addGeometriesFromCaseFolderId) return;
 
         const allFeatures = addGeometriesFromCaseFolderId.feature.features;
-
-        // Poligoane
-        const polygonFeatures = allFeatures.filter(
-            f => (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon") &&
-                f.geometry.coordinates.some(ring => ring.length > 0) // verificăm coordonate
+        const polygons = allFeatures.filter(f =>
+            (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon")
         );
+        const points = allFeatures.filter(f => f.geometry.type === "Point");
 
-        // Puncte
-        const pointFeatures = allFeatures.filter(
-            f => f.geometry.type === "Point" &&
-                Array.isArray(f.geometry.coordinates) &&
-                f.geometry.coordinates.length === 2 // coordonate valide
-        );
+        setPolygonFC({type: 'FeatureCollection', features: polygons});
+        setPointFC({type: 'FeatureCollection', features: points});
+    }, [addGeometriesFromCaseFolderId]);
 
-        const polygonFC: FeatureCollection<Geometry> = {
-            type: "FeatureCollection",
-            features: polygonFeatures
-        };
+    useEffect(() => {
+        if (!map.current || !polygonFC.features.length) return;
 
-        const pointFC: FeatureCollection<Geometry> = {
-            type: "FeatureCollection",
-            features: pointFeatures
-        };
-
-        // --- Poligoane ---
         if (map.current.getSource("polygon")) {
             (map.current.getSource("polygon") as maptilersdk.GeoJSONSource).setData(polygonFC);
         } else {
@@ -164,62 +155,58 @@ export const Map = () => {
                 id: "polygon-fill",
                 type: "fill",
                 source: "polygon",
-                paint: {"fill-color": "#ff0000", "fill-opacity": 0.3},
+                paint: {"fill-color": "#ff0000", "fill-opacity": 0.3}
             });
             map.current.addLayer({
                 id: "polygon-outline",
                 type: "line",
                 source: "polygon",
-                paint: {"line-color": "#ff0000", "line-width": 2},
+                paint: {"line-color": "#ff0000", "line-width": 2}
             });
         }
 
-        // --- Puncte ---
-        if (pointFeatures.length) {
-            if (map.current.getSource("points")) {
-                (map.current.getSource("points") as maptilersdk.GeoJSONSource).setData(pointFC);
-            } else {
-                map.current.addSource("points", {type: "geojson", data: pointFC});
-                map.current.addLayer({
-                    id: "points-layer",
-                    type: "circle",
-                    source: "points",
-                    paint: {
-                        "circle-radius": 10,
-                        "circle-color": "#0000ff",
-                        "circle-stroke-width": 2,
-                        "circle-stroke-color": "#ffffff"
-                    }
-                });
-            }
+        // zoom pe toate poligoanele
+        const bounds = new maptilersdk.LngLatBounds();
+        polygonFC.features.forEach(f => {
+            const rings = f.geometry.type === "Polygon"
+                ? f.geometry.coordinates
+                : f.geometry.coordinates.flat();
+            rings.forEach(r => r.forEach(([lng, lat]) => bounds.extend([lng, lat])));
+        });
+        map.current.fitBounds(bounds, {padding: 50});
+    }, [polygonFC]);
 
-            // Zoom pe primul punct valid
-            const firstPoint = pointFeatures.find(p => Array.isArray(p.geometry.coordinates) && p.geometry.coordinates.length === 2);
-            if (firstPoint) {
-                const [lng, lat] = firstPoint.geometry.coordinates as [number, number];
-                map.current.flyTo({center: [lng, lat], zoom: 15});
-            }
-        } else if (polygonFeatures.length) {
-            // Zoom pe poligoane doar dacă există coordonate valide
-            const bounds = new maptilersdk.LngLatBounds();
-            let hasCoords = false;
 
-            polygonFeatures.forEach(f => {
-                const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates : f.geometry.coordinates.flat();
-                coords.forEach(ring => {
-                    if (ring.length > 0) {
-                        hasCoords = true;
-                        ring.forEach(([lng, lat]) => bounds.extend([lng, lat]));
-                    }
-                });
+    useEffect(() => {
+        if (!map.current) return;
+        if (!pointFC.features.length) return;
+
+        // dacă sursa există, doar o actualizăm
+        if (map.current.getSource("points")) {
+            (map.current.getSource("points") as maptilersdk.GeoJSONSource).setData(pointFC);
+        } else {
+            map.current.addSource("points", {
+                type: "geojson",
+                data: pointFC,
             });
 
-            if (hasCoords) {
-                map.current.fitBounds(bounds, {padding: 50});
-            }
+            // layer de tip circle
+            map.current.addLayer({
+                id: "points-circle",
+                type: "circle",
+                source: "points",
+                paint: {
+                    "circle-radius": 8,            // rază pixel
+                    "circle-color": "#ff0000",     // culoare cerc
+                    "circle-stroke-width": 2,      // grosimea conturului
+                    "circle-stroke-color": "#ffffff",
+                },
+            });
         }
 
-    }, [addGeometriesFromCaseFolderId]);
+        const [lng, lat] = pointFC.features[0].geometry.coordinates as [number, number];
+        map.current.flyTo({center: [lng, lat], zoom: 15});
+    }, [pointFC]);
 
 
     return (
