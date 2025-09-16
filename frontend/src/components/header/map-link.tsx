@@ -4,7 +4,7 @@ import {Link} from "react-router";
 export const MapLink = () => {
     return (
         <div>
-            <Link to={"/map"}
+            <Link to={"/hooks"}
                   style={{
                       padding: "6px",
                       height: "20px",
