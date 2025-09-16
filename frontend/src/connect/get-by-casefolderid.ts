@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {apiRequest} from "./api-client.ts";
 import type {ApiCaseFolderIdResponse} from "./types.ts";
-import {useStateCasefolderId} from "../store/useStateGetByCasefolderId.ts";
+import {useStateCasefolderId} from "../store/useStoreGetByCasefolderId.ts";
 
 export const useGetByCaseFolderId = () => {
 

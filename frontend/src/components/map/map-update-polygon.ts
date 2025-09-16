@@ -1,11 +1,11 @@
 import * as maptilersdk from "@maptiler/sdk";
-import {useStateGeometry} from "../../store/useStateGeometry.ts";
+import {useStoreGeometry} from "../../store/useStoreGeometry.ts";
 
 export const updatePolygonData = (
     map: maptilersdk.Map,
     points: maptilersdk.LngLat[]
 ) => {
-    const setGeometry = useStateGeometry.getState().setGeometry;
+    const setGeometry = useStoreGeometry.getState().setGeometry;
 
     const geometryForBackend = {
         latitude: points.map(pt => pt.lat),

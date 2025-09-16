@@ -1,11 +1,11 @@
 import './App.css'
 import {Header} from "./components/header/header.tsx";
 import {Sidebar} from "./components/sidebar/sidebar.tsx";
-import {useStateToggleSideBar} from "./store/useStateToggleSideBar.ts";
+import {useStoreToggleSideBar} from "./store/useStoreToggleSideBar.ts";
 import {Outlet} from "react-router";
 
 function App() {
-    const {isOpen} = useStateToggleSideBar();
+    const {isOpen} = useStoreToggleSideBar();
     const sidebarWidth = isOpen ? 300 : 0;
 
     return (

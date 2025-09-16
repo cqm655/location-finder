@@ -1,4 +1,4 @@
-import {useStateGeometry} from "../../store/useStateGeometry.ts";
+import {useStoreGeometry} from "../../store/useStoreGeometry.ts";
 import {useGetByGeometry} from "../../connect/get-by-geometry.ts";
 import {useMemo, useState} from "react";
 import dayjs, {Dayjs} from 'dayjs';
@@ -7,7 +7,7 @@ import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import utc from "dayjs/plugin/utc";
 import {DateTimeField} from "@mui/x-date-pickers";
 import './style.css'
-import {useStateSetSideBardAccordionData} from "../../store/useStateSetSideBardAccordionData.ts";
+import {useStoreSetSideBardAccordionData} from "../../store/useStoreSetSideBardAccordionData.ts";
 
 dayjs.extend(utc);
 
@@ -29,8 +29,8 @@ export const MapControls = ({
 
     const [startTime, setStartTime] = useState<Dayjs | null>(dayjs().startOf('day').add(3, 'hour'));
     const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day').add(3, 'hour'));
-    const data = useStateSetSideBardAccordionData((state) => state.data);
-    const geometry = useStateGeometry((state) => state.geometry);
+    const data = useStoreSetSideBardAccordionData((state) => state.data);
+    const geometry = useStoreGeometry((state) => state.geometry);
 
     const requestPayload = useMemo(() => ({
         type: "polygon",

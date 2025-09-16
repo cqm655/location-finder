@@ -7,9 +7,10 @@ interface GeometryStore {
     setLoading: (isLoading: boolean) => void;
     setGeometry: (geometry: ApiPolygoneResponse['geometry']) => void;
     geometry: { latitude: number[], longitude: number[] }
+    removeGeometry: () => void;
 }
 
-export const useStateGeometry = create<GeometryStore>((set) => ({
+export const useStoreGeometry = create<GeometryStore>((set) => ({
     isLoading: false,
     geometry: {latitude: [], longitude: []},
     setLoading: (isLoading: boolean) => {
@@ -17,5 +18,6 @@ export const useStateGeometry = create<GeometryStore>((set) => ({
     },
     setGeometry: (geometry) => {
         set({geometry});
-    }
+    },
+    removeGeometry: () => set({geometry: {latitude: [], longitude: []}})
 }));

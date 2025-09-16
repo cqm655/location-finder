@@ -8,7 +8,7 @@ export interface CasefolderDataStore {
     resetCaseFolderData: () => void;
 }
 
-export const useStateSetSideBardAccordionData = create<CasefolderDataStore>((set) => ({
+export const useStoreSetSideBardAccordionData = create<CasefolderDataStore>((set) => ({
     data: [],
     setCaseFolderData: (newData) =>
         set(() => ({

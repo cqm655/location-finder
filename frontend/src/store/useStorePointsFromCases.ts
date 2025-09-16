@@ -19,7 +19,7 @@ interface CasePointsMapStore {
     resetPoints: () => void,
 }
 
-export const useStatePointsFromCases = create<CasePointsMapStore>((set) => ({
+export const useStorePointsFromCases = create<CasePointsMapStore>((set) => ({
     point: [],
     setPoint: (newPoint: PointStore[]) => set(({point: newPoint})),
     resetPoints: () => set({point: []})

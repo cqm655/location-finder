@@ -1,7 +1,7 @@
 import CircularProgress from "@mui/material/CircularProgress";
 import {TextField} from "@mui/material";
 
-import {useStateCasefolderId} from "../../store/useStateGetByCasefolderId.ts";
+import {useStateCasefolderId} from "../../store/useStoreGetByCasefolderId.ts";
 
 export const CasefolderidInput = () => {
     const setCaseFolderId = useStateCasefolderId((state) => state.setCasefolderId)

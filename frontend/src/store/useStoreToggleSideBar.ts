@@ -5,7 +5,7 @@ type SideBarState = {
     openSidebar: () => void;
 };
 
-export const useStateToggleSideBar = create<SideBarState>((set) => ({
+export const useStoreToggleSideBar = create<SideBarState>((set) => ({
     isOpen: false,
     openSidebar: () => set((state) => ({isOpen: !state.isOpen})),
 }));

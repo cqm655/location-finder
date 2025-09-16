@@ -1,17 +1,17 @@
 import type {ApiCaseFolderIdResponse} from "./types.ts";
 import {useEffect, useState} from "react";
 import {apiRequest} from "./api-client.ts";
-import {useStateCasefolderId} from "../store/useStateGetByCasefolderId.ts";
-import {useStatePointsFromCases} from "../store/useStatePointsFromCases.ts";
-import {useStateSetSideBardAccordionData} from "../store/useStateSetSideBardAccordionData.ts";
+import {useStateCasefolderId} from "../store/useStoreGetByCasefolderId.ts";
+import {useStorePointsFromCases} from "../store/useStorePointsFromCases.ts";
+import {useStoreSetSideBardAccordionData} from "../store/useStoreSetSideBardAccordionData.ts";
 
 
 export const useGetByGeometry = (geometry: ApiCaseFolderIdResponse) => {
     const setLoading = useStateCasefolderId((state) => state.setLoading);
     const [error, setError] = useState<string | null>(null);
     const [resp, setResp] = useState<ApiCaseFolderIdResponse[]>();
-    const setPoint = useStatePointsFromCases((state) => state.setPoint);
-    const stateByGeometry = useStateSetSideBardAccordionData((state) => state.setCaseFolderData);
+    const setPoint = useStorePointsFromCases((state) => state.setPoint);
+    const stateByGeometry = useStoreSetSideBardAccordionData((state) => state.setCaseFolderData);
 
     useEffect(() => {
         const getByGeometry = async (geometry: ApiCaseFolderIdResponse) => {

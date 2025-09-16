@@ -1,42 +1,49 @@
-import {AccordionItem} from "./Accordion-item.tsx";
-import {Accordion, AccordionDetails, AccordionSummary, Typography} from "@mui/material";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import {useStoreAddPointOnMap} from "../../store/useStoreAddPointOnMap.ts";
-import {useStoreGeometryFromCaseFolderId} from "../../store/useStoreGeometryFromCaseFolderId.ts";
-import {useGetGeomByCasefolderid} from "../../connect/get-geom-by-casefolderid.ts";
-import {type ParsedMobilePosition, parseMobilePosition} from "../../utils/shapeXmlToGeoJSON.ts";
-import type {ApiCaseFolderIdResponse} from "../../connect/types.ts";
 import {useState} from "react";
-
-interface Props {
-    data: ApiCaseFolderIdResponse[] | ApiCaseFolderIdResponse;
-}
+import {
+    Accordion, AccordionDetails, AccordionSummary,
+    Button, Typography
+} from "@mui/material";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import {AccordionItem} from "./Accordion-item.tsx";
+import {useStoreAddPointOnMap} from "../../store/useStoreAddPointOnMap.ts";
+import {type StoredGeometry, useStoreGeometryFromCaseFolderId} from "../../store/useStoreGeometryFromCaseFolderId.ts";
+import {useGetGeomByCasefolderid} from "../../connect/get-geom-by-casefolderid.ts";
+import {parseMobilePosition, type ParsedMobilePosition} from "../../utils/shapeXmlToGeoJSON.ts";
+import type {ApiCaseFolderIdResponse} from "../../connect/types.ts";
+import {parseTime} from "../../utils/parse-time.ts";
+import {math} from "@maptiler/sdk";
+import {useStorePointsFromCases} from "../../store/useStorePointsFromCases.ts";
 
 type GeometryWithDate = {
     geometry: ParsedMobilePosition;
     created: Date;
 };
 
+interface Props {
+    data: ApiCaseFolderIdResponse[] | ApiCaseFolderIdResponse;
+}
+
 export const AccordionComponent = ({data}: Props) => {
-    const [resp, setResp] = useState<GeometryWithDate[]>([]);
     const items = Array.isArray(data) ? data : [data];
-    const setPointOnMap = useStoreAddPointOnMap((state) => state.setCoordinate);
-    const setGeomFromCaseFolderId = useStoreGeometryFromCaseFolderId(
-        (state) => state.setSelectedFeature
-    );
-    const getGeometryFromCaseFolderId = useStoreGeometryFromCaseFolderId(
-        (state) => state.selectedFeature
-    );
+    const [geomById, setGeomById] = useState<Record<number, GeometryWithDate[]>>({});
+    const setPointOnMap = useStoreAddPointOnMap((s) => s.setCoordinate);
+    const resetPointOnMap = useStoreAddPointOnMap((s) => s.resetCoordinates);
+    const resetFeatures = useStoreGeometryFromCaseFolderId((s) => s.resetSelectedFeature);
     const {fetchGeom} = useGetGeomByCasefolderid();
-    const resetFeatures = useStoreGeometryFromCaseFolderId(
-        (state) => state.resetSelectedFeature
-    );
+    const [selectedIdx, setSelectedIdx] = useState<Record<number, number | null>>({});
+    const addUniqueGeoemetries = useStoreGeometryFromCaseFolderId((state) => state.addUniqueFeature)
+    const removeUniqueGeometrie = useStoreGeometryFromCaseFolderId((state) => state.resetSelectedFeature)
+
 
     const handleAML = async (id: number) => {
         resetFeatures();
+        resetPointOnMap();
+
+        if (geomById[id]) return;
+
         const resp = await fetchGeom(id);
         const geometry = resp
-            ?.map((item) => ({
+            ?.map(item => ({
                 geometry: parseMobilePosition(item.geometry),
                 created: item.Created,
             }))
@@ -44,35 +51,25 @@ export const AccordionComponent = ({data}: Props) => {
             .filter(g => {
                 const geom = g.geometry.feature;
                 if (!geom) return false;
-
                 if (geom.features.length === 0) return false;
 
-                // verificăm fiecare feature
-                const hasCoordinates = geom.features.some(f => {
+                return geom.features.some(f => {
                     if (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon") {
-                        // Polygon: verificăm primul ring
                         return f.geometry.coordinates.some(ring => ring.length > 0);
                     }
-                    // Point sau LineString considerăm valid
                     return true;
                 });
+            }) ?? [];
 
-                return hasCoordinates;
-            });
 
-        console.log(geometry)
-        setResp(geometry || [])
-        // geometry?.forEach((g) => {
-        //     if (g.geometry.type !== "UNKNOWN") {
-        //         setGeomFromCaseFolderId(g.geometry.type, g.geometry.feature, g.geometry.raw, g.created);
-        //     }
-        // });
+        setGeomById(prev => ({...prev, [id]: geometry}));
     };
 
     return (
         <div>
-            {items.map((item) => (
-                <Accordion key={item.caseFolderId}>
+            {items.map((item, n) => (
+                <Accordion key={n}
+                           onChange={(_, expanded) => expanded && handleAML(item.caseFolderId)}>
                     <AccordionSummary expandIcon={<ArrowDownwardIcon/>}>
                         <Typography>CaseFolderId: {item.caseFolderId}</Typography>
                     </AccordionSummary>
@@ -86,37 +83,48 @@ export const AccordionComponent = ({data}: Props) => {
                         <AccordionItem
                             label="Localizare"
                             value={
-                                <button
-                                    onClick={() =>
-                                        item.XCoordinate &&
-                                        item.YCoordinate &&
-                                        setPointOnMap({
-                                            XCoordinate: item.XCoordinate,
-                                            YCoordinate: item.YCoordinate,
-                                        })
-                                    }
-                                >
-                                    Punct setat de operator
-                                </button>
+                                <Button variant="contained" color="warning"
+                                        onClick={() => item.XCoordinate && item.YCoordinate &&
+                                            setPointOnMap({
+                                                XCoordinate: item.XCoordinate,
+                                                YCoordinate: item.YCoordinate,
+                                            })}>
+                                    <Typography fontSize={10}>Punct setat de operator</Typography>
+                                </Button>
                             }
                         />
-
-                        <AccordionItem
+                        {item.created ? (<AccordionItem
                             label="AML"
                             value={
                                 <>
-                                    <button onClick={() => handleAML(item.caseFolderId)}>
-                                        Fetch AML
-                                    </button>
-                                    {resp.map((item) => (
-                                        <div onClick={() => {
-                                            setGeomFromCaseFolderId(item.geometry)
-                                            console.log(item.geometry,)
-                                        }}>{item.created.toString() + ' ' + item.geometry.type}</div>
-                                    ))}
+                                    {(geomById[item.caseFolderId] ?? []).map((g, n) => {
+
+                                        return (<Button
+                                            key={n}
+                                            variant="contained"
+                                            color={selectedIdx[item.caseFolderId] === n ? "primary" : "error"}
+                                            sx={{mt: 1}}
+                                            onClick={() => {
+                                                const newGeom: StoredGeometry = {
+                                                    features: g.geometry.feature,
+                                                    type: g.geometry.type
+                                                };
+
+                                                addUniqueGeoemetries([newGeom])
+
+                                                setSelectedIdx(prev => ({...prev, [item.caseFolderId]: n}))
+                                            }}
+                                        >
+                                            <Typography fontSize={10}>
+                                                {g.geometry.type} {parseTime(g.created)}
+                                            </Typography>
+                                        </Button>)
+                                    })}
                                 </>
                             }
-                        />
+                        />) : <p>... no data</p>}
+
+
                     </AccordionDetails>
                 </Accordion>
             ))}

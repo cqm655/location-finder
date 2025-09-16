@@ -1,9 +1,9 @@
 import {Box, LinearProgress, Stack} from "@mui/material"
-import {useStateToggleSideBar} from "../../store/useStateToggleSideBar.ts";
+import {useStoreToggleSideBar} from "../../store/useStoreToggleSideBar.ts";
 import {AccordionComponent} from "./accordion-component.tsx";
 import {useGetByCaseFolderId} from "../../connect/get-by-casefolderid.ts";
-import {useStateCasefolderId} from "../../store/useStateGetByCasefolderId.ts";
-import {useStateSetSideBardAccordionData} from "../../store/useStateSetSideBardAccordionData.ts";
+import {useStateCasefolderId} from "../../store/useStoreGetByCasefolderId.ts";
+import {useStoreSetSideBardAccordionData} from "../../store/useStoreSetSideBardAccordionData.ts";
 
 
 export const Sidebar = () => {
@@ -11,8 +11,8 @@ export const Sidebar = () => {
 
     const {resp} = useGetByCaseFolderId()
     const loading = useStateCasefolderId((state) => state.isLoading)
-    const isOpen = useStateToggleSideBar((state) => state.isOpen)
-    const data = useStateSetSideBardAccordionData((state) => state.data);
+    const isOpen = useStoreToggleSideBar((state) => state.isOpen)
+    const data = useStoreSetSideBardAccordionData((state) => state.data);
 
 
     return (
