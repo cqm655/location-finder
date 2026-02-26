@@ -6,7 +6,7 @@ import {Outlet} from "react-router";
 
 function App() {
     const {isOpen} = useStoreToggleSideBar();
-    const sidebarWidth = isOpen ? 300 : 0;
+    const sidebarWidth = isOpen ? 400 : 0;
 
     return (
         <div style={{

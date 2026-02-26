@@ -25,6 +25,8 @@ export class ResponseCaseFolderIdDto {
   provider: string;
   @IsString()
   status: string;
+  @IsString()
+  caseTypeName: string;
 
   geometry: any;
 }

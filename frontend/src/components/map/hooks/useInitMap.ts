@@ -1,4 +1,4 @@
-import {useEffect, useRef} from "react";
+import {useEffect} from "react";
 import * as maptilersdk from "@maptiler/sdk";
 import {mapAddPolygon} from "../map-add-polygon.ts";
 

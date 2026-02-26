@@ -20,7 +20,7 @@ type StoreState = {
 export const useStoreGeometryFromCaseFolderId = create<StoreState>((set) => ({
     selectedFeature: [],
     addUniqueFeature: (geom) => set((state) => {
-        const current = state.selectedFeature ?? []; // dacă e null -> []
+        
         const seen = new Set<string>();
         const uniqueItems = [...state.selectedFeature, ...geom].filter(item => {
             const key = JSON.stringify(item);

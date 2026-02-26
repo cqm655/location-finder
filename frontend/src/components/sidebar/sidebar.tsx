@@ -14,10 +14,9 @@ export const Sidebar = () => {
     const isOpen = useStoreToggleSideBar((state) => state.isOpen)
     const data = useStoreSetSideBardAccordionData((state) => state.data);
 
-
     return (
         <div style={{
-            width: !isOpen ? "0px" : "300px",
+            width: !isOpen ? "0px" : "fit-content",
             display: 'flex',
             justifyContent: "end",
             transition: 'width 0.6s ease'

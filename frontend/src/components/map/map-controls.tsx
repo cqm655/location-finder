@@ -17,6 +17,7 @@ interface MapControlsProps {
     onToggleDrawing: () => void;
     onUndo: () => void;
     onReset: () => void;
+    onSearch: () => void;
 }
 
 export const MapControls = ({
@@ -46,9 +47,19 @@ export const MapControls = ({
         console.log("Trimis la backend:", requestPayload);
         console.log("Răspuns backend:", resp);
         console.log("Răspuns backend:", data);
-
         console.log("Error backend:", error);
 
+    };
+
+    const handleEndTimeChange = (newValue: Dayjs | null) => {
+        setEndTime(newValue);
+        // Dacă avem și startTime setat, triggerăm căutarea automat
+        if (newValue && startTime) {
+            onSearch();
+            if (!isDrawing) {          // 👈 doar dacă nu e deja activ
+                onToggleDrawing();
+            }
+        }
     };
 
     return (
@@ -110,8 +121,8 @@ export const MapControls = ({
             </button>
 
             <div style={{
-                backgroundColor: "dimgrey",
-                marginTop: "8px",
+                backgroundColor: "antiquewhite",
+                marginTop: "16px",
                 pointerEvents: "none",
             }}
 
@@ -125,7 +136,7 @@ export const MapControls = ({
                         format="YYYY:MM:DD HH:mm"
                         onChange={setStartTime}
                         ampm={false}
-                        disabled={pointsCount === 0 ? true : false}
+                        // disabled={pointsCount === 0 ? true : false}
                     />
 
                     <DateTimeField
@@ -133,9 +144,9 @@ export const MapControls = ({
                         style={{width: "160px"}}
                         defaultValue={dayjs().endOf('day')}
                         format="YYYY:MM:DD HH:mm"
-                        onChange={setEndTime}
+                        onChange={handleEndTimeChange}
                         ampm={false}
-                        disabled={pointsCount === 0 ? true : false}
+                        // disabled={pointsCount === 0 ? true : false}
                     />
                 </LocalizationProvider>
             </div>

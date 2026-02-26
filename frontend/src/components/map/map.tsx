@@ -64,11 +64,17 @@ export const Map = () => {
                 }
             });
 
-            map.current.flyTo({
-                center: [28.907089, 47.00367],
-                zoom: 8
-            });
+
         }
+        map.current.flyTo({
+            center: [28.907089, 47.00367],
+            zoom: 8
+        });
+    }
+
+    const handleSearch = () => {
+        // logica ta de search / activare drawing
+        setIsDrawing(true); // sau ce vrei să se întâmple
     }
 
     return (
@@ -79,6 +85,7 @@ export const Map = () => {
                 onToggleDrawing={() => setIsDrawing((v) => !v)}
                 onUndo={() => setPoints((prev) => prev.slice(0, -1))}
                 onReset={() => handleReset()}
+                onSearch={handleSearch}
             />
 
             <div ref={mapContainer} style={{width: "100%", height: "100vh", position: "absolute"}}/>

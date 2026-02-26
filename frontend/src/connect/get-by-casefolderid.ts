@@ -26,5 +26,6 @@ export const useGetByCaseFolderId = () => {
         }
         getByCaseFolderId()
     }, [casefolderId])
+
     return {resp, error}
 }

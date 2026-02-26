@@ -1,10 +1,21 @@
+interface Geometry {
+    mlp?: [],
+    aml?: [],
+    coordinates?: number[];
+}
+
+interface PolygonGeometry {
+    latitude: number[];
+    longitude: number[];
+}
+
 export interface ApiCaseFolderIdResponse {
-    caller: string;
-    caseFolderId: number;
-    caseIndexComment: string;
+    caller?: string;
+    caseFolderId?: number;
+    caseIndexComment?: string;
     createdAt?: string;
     createdBy?: string;
-    geometry?: Geometry;
+    geometry?: PolygonGeometry;
     locality?: string;
     phoneNumber?: string;
     provider?: string;
@@ -13,32 +24,27 @@ export interface ApiCaseFolderIdResponse {
     streetNumber?: string;
     startDate?: string;
     endDate?: string;
-    caseIndex1Name: string;
-    caseIndex2Name: string;
+    caseIndex1Name?: string;
+    caseIndex2Name?: string;
     caseTypeId?: number;
+    caseTypeName?: string;
     created?: Date;
-    XCoordinate: number;
-    YCoordinate: number;
-    creator: string;
+    XCoordinate?: number;
+    YCoordinate?: number;
+    creator?: string;
 }
 
-interface Geometry {
-    mlp: [],
-    aml: []
-}
 
 export interface ApiPolygoneResponse {
     type: string;
-    geometry: {
-        latitude: number[],
-        longitude: number[],
-    },
+    geometry: Geometry,
     startDate: string;
     endDate: string;
     caseFolderId?: number;
     caseIndex1Name: string;
     caseIndex2Name?: string;
     caseTypeId?: number;
+    caseTypeName?: string;
     createdDate?: Date;
     XCoordinate: number;
     YCoordinate: number;
@@ -54,30 +60,11 @@ export interface ApiPolygoneResponse {
     streetNumber: string;
 }
 
-interface Geometry {
-    coordinates: number[];
-}
-
-
-export interface ShapeResponse {
-    accuracyPosition: string;
-    formatPosition: string;
-    geometry: Geometry[];
-    levelConfidence: string;
-    msid: number;
-    positionId: number;
-    provider: string;
-    timePosition: string;
-    imei?: string;
-    imsi?: string;
-    positionMethod?: string;
-    radiusPosition?: string;
-}
-
 export interface ResponseGeomByCaseFolderId {
     Caller: string;
     CaseFolderId: number;
     CaseIndexComment: string;
+    CaseTypeName: string;
     Created: Date;
     Creator: string;
     Locality: string;

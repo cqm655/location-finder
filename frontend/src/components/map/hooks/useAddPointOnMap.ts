@@ -1,11 +1,11 @@
-import {useEffect, useRef} from "react";
+import {useEffect} from "react";
 import * as maptilersdk from "@maptiler/sdk";
 import maplibregl from "maplibre-gl";
 import {useStoreAddPointOnMap} from "../../../store/useStoreAddPointOnMap.ts";
 
 type Props = {
     map: React.RefObject<maptilersdk.Map | null>;
-    markersRef: React.MutableRefObject<maplibregl.Marker[]>;
+    markersRef: React.RefObject<maplibregl.Marker[]>;
 }
 
 export const useAddPointOnMap = ({map, markersRef}: Props) => {

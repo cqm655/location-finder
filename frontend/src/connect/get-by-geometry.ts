@@ -26,6 +26,7 @@ export const useGetByGeometry = (geometry: ApiCaseFolderIdResponse) => {
                     caseIndex2Name: item.caseIndex2Name,
                     caseFolderId: item.caseFolderId,
                     caseTypeId: item.caseTypeId,
+                    caseTypeName: item.caseTypeName,
                     caller: item.caller,
                     caseIndexComment: item.caseIndexComment,
                     created: item.created,
@@ -41,6 +42,7 @@ export const useGetByGeometry = (geometry: ApiCaseFolderIdResponse) => {
                     caseIndex2Name: string;
                     caseFolderId: number;
                     caseTypeId: number;
+                    caseTypeName: item.caseTypeName,
                     caseIndexComment: string;
                     caller: string;
                     created: Date;
@@ -57,6 +59,7 @@ export const useGetByGeometry = (geometry: ApiCaseFolderIdResponse) => {
                         caseIndex2Name: p.caseIndex2Name!,
                         caseFolderId: p.caseFolderId!,
                         caseTypeId: p.caseTypeId!,
+                        caseTypeName: p.caseTypeName!,
                         caseIndexComment: p.caseIndexComment!,
                         caller: p.caller!,
                         created: p.created!,

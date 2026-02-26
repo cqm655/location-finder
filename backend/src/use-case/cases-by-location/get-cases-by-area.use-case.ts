@@ -12,6 +12,7 @@ import { getInfoCasesByArea } from '../../db/scripts/get-info-cases';
 export interface InfoByLocationResponse {
   caseFolderId: number;
   caseTypeId: number;
+  caseTypeName: string;
   created: string;
   XCoordinate: number;
   YCoordinate: number;
