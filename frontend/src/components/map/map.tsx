@@ -44,28 +44,33 @@ export const Map = () => {
     useDrawPointFromCaseFolderID({map, pointFC})
 
     const handleReset = () => {
-        setPoints([])
-        resetPoint()
-        removeUniqueGeometrie(uniqueSelectedGeometries)
-        resetAccordionData()
-        removeStoreGeometry()
+        // 1. Resetăm stările care nu depind de harta maptiler
+        setPoints([]);
+        resetPoint();
+        removeUniqueGeometrie(uniqueSelectedGeometries);
+        resetAccordionData();
+        removeStoreGeometry();
 
+        // 2. Curățăm markerii (verificăm dacă există referința)
         markersRef.current.forEach(marker => marker.remove());
         markersRef.current = [];
 
-        if (map.current) {
-            const layersToRemove = ["polygon-fill", "points-circle", "polygon-outline"]; // folosește id-urile layer-elor tale
-            layersToRemove.forEach(layerId => {
-                if (map.current.getLayer(layerId)) {
-                    map.current.removeLayer(layerId);
-                }
-                if (map.current.getSource(layerId)) {
-                    map.current.removeSource(layerId);
-                }
-            });
+        // 3. Verificarea crucială pentru TS: Guard Clause
+        if (!map.current) return;
 
+        // De aici în colo, TS știe că map.current NU este null
+        const layersToRemove = ["polygon-fill", "points-circle", "polygon-outline"];
 
-        }
+        layersToRemove.forEach(layerId => {
+            // Verificăm existența layer-ului și sursei înainte de ștergere
+            if (map.current?.getLayer(layerId)) {
+                map.current.removeLayer(layerId);
+            }
+            if (map.current?.getSource(layerId)) {
+                map.current.removeSource(layerId);
+            }
+        });
+
         map.current.flyTo({
             center: [28.907089, 47.00367],
             zoom: 8

@@ -76,3 +76,17 @@ export interface ResponseGeomByCaseFolderId {
     geometry: string;
 }
 
+// Aceasta reprezintă structura GeoJSON pe care o așteaptă store-ul tău
+interface GeoJsonFeatureCollection {
+    type: "FeatureCollection";
+    features: any[]; // Poți detalia aici dacă ai un tip specific pentru GeoJSON
+}
+
+export interface GeometryWithDate {
+    geometry: {
+        type: 'AML' | 'MLP';
+        feature: GeoJsonFeatureCollection;
+    };
+    created: Date | string;
+}
+
