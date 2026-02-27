@@ -15,6 +15,8 @@ import type {ApiCaseFolderIdResponse, GeometryWithDate} from "../../connect/type
 import {parseTime} from "../../utils/parse-time.ts";
 import {getSsuIconType} from "../../utils/parse-ssu-icon.ts";
 import Doc from "../../assets/doc.png";
+import {useGetLogsByCasefolderId} from "../../connect/get-logs-by-casefolderid.ts";
+import ArticleIcon from '@mui/icons-material/Article';
 
 interface Props {
     data: ApiCaseFolderIdResponse[] | ApiCaseFolderIdResponse;
@@ -27,9 +29,12 @@ export const AccordionComponent = ({data}: Props) => {
     const resetPointOnMap = useStoreAddPointOnMap((s) => s.resetCoordinates);
     const resetFeatures = useStoreGeometryFromCaseFolderId((s) => s.resetSelectedFeature);
     const {fetchGeom} = useGetGeomByCasefolderid();
+    const {fetchLogs} = useGetLogsByCasefolderId();
     const [selectedIdx, setSelectedIdx] = useState<Record<number, number | null>>({});
     const addUniqueGeoemetries = useStoreGeometryFromCaseFolderId((state) => state.addUniqueFeature);
     const [expandedId, setExpandedId] = useState<number | null>(null);
+    const [logsById, setLogsById] = useState<Record<number, any[]>>({});
+    const [loadingLogs, setLoadingLogs] = useState<Record<number, boolean>>({});
 
     const handleAML = async (id: number) => {
         if (geomById[id]) return;
@@ -47,6 +52,21 @@ export const AccordionComponent = ({data}: Props) => {
 
         setGeomById(prev => ({...prev, [id]: geometry}));
     };
+
+    const handleLogs = async (id: number) => {
+        if (logsById[id]) return; // Nu mai descărca dacă le avem deja
+
+        setLoadingLogs(prev => ({...prev, [id]: true}));
+        try {
+            const resp = await fetchLogs(id);
+            console.log(resp)
+            setLogsById(prev => ({...prev, [id]: resp}));
+        } catch (error) {
+            console.error("Eroare la loguri:", error);
+        } finally {
+            setLoadingLogs(prev => ({...prev, [id]: false}));
+        }
+    }
 
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, p: 1}}>
@@ -81,9 +101,6 @@ export const AccordionComponent = ({data}: Props) => {
                                     {/* Folosim caseTypeId cu fallback dacă e opțional */}
                                     <img src={getSsuIconType(item.caseTypeId ?? 0)} style={{width: 28, height: 28}}
                                          alt="type"/>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Tip: {item.caseTypeId}
-                                    </Typography>
                                 </Box>
                             </Stack>
                         </AccordionSummary>
@@ -96,6 +113,60 @@ export const AccordionComponent = ({data}: Props) => {
                                 <AccordionItem label="Tip caz" value={item.caseTypeName}/>
                                 <AccordionItem label="Nivel 1" value={item.caseIndex1Name}/>
                                 <AccordionItem label="Nivel 2" value={item.caseIndex2Name}/>
+                                <AccordionItem label="Telefon" value={item.phoneNumber}/>
+                                <Paper variant="outlined" sx={{p: 2, bgcolor: '#f8f9fa', gridColumn: 'span 2'}}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center"
+                                           sx={{mb: 1}}>
+                                        <Typography variant="subtitle2"
+                                                    sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                            <ArticleIcon fontSize="small" color="action"/> Loguri Activitate
+                                        </Typography>
+                                        {!logsById[caseId] && (
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                onClick={() => handleLogs(caseId)}
+                                                disabled={loadingLogs[caseId]}
+                                            >
+                                                {loadingLogs[caseId] ? "Se încarcă..." : "Vezi Loguri"}
+                                            </Button>
+                                        )}
+                                    </Stack>
+
+                                    {logsById[caseId] && (
+                                        <Box sx={{
+                                            mt: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                            maxHeight: 300,
+                                            overflowY: 'auto'
+                                        }}>
+                                            {logsById[caseId].length > 0 ? (
+                                                logsById[caseId].map((log, idx) => (
+                                                    <Box key={idx} sx={{
+                                                        p: 1,
+                                                        bgcolor: 'white',
+                                                        borderRadius: 1,
+                                                        borderLeft: '3px solid #0288d1',
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                                    }}>
+                                                        <Typography variant="caption" color="text.secondary"
+                                                                    display="block">
+                                                            {parseTime(log.Created)} - <strong>{log.Creator.trim()}</strong>
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{fontSize: '0.85rem'}}>
+                                                            {log.LogText}
+                                                        </Typography>
+                                                    </Box>
+                                                ))
+                                            ) : (
+                                                <Typography variant="caption" color="text.secondary">Nu există loguri
+                                                    pentru acest caz.</Typography>
+                                            )}
+                                        </Box>
+                                    )}
+                                </Paper>
                                 <Box sx={{gridColumn: 'span 2'}}>
                                     <AccordionItem label="Fabulă" value={item.caseIndexComment || "Fără comentarii"}/>
                                 </Box>

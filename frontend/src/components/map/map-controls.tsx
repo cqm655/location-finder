@@ -18,6 +18,7 @@ import {
 import CreateIcon from '@mui/icons-material/Create';
 import UndoIcon from '@mui/icons-material/Undo';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import SearchIcon from '@mui/icons-material/Search';
 import StopIcon from '@mui/icons-material/Stop';
 
 dayjs.extend(utc);
@@ -50,10 +51,12 @@ export const MapControls = ({
         endDate: endTime?.utc().format() || dayjs().toISOString(),
     }), [geometry, startTime, endTime]);
 
-    const handleSearch = () => {
-        console.log("Căutare executată:", requestPayload);
-    };
+    const {fetchData, error} = useGetByGeometry(); // Hook-ul acum doar ne dă funcția
 
+    const handleSearch = () => {
+        // Apelăm manual funcția cu datele pregătite în useMemo
+        fetchData(requestPayload);
+    };
     return (
         <Paper
             elevation={4}
@@ -122,7 +125,16 @@ export const MapControls = ({
                     <Typography variant="caption" color="text.secondary">
                         Puncte poligon: <strong>{pointsCount}</strong>
                     </Typography>
-
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        startIcon={<SearchIcon/>}
+                        disabled={pointsCount < 3}
+                        onClick={handleSearch}
+                    >
+                        Caută
+                    </Button>
                 </Box>
             </Stack>
         </Paper>

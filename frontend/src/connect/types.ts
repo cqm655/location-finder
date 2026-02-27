@@ -60,6 +60,12 @@ export interface ApiPolygoneResponse {
     streetNumber: string;
 }
 
+export interface ApiLogsByCaseFolderIdResponse {
+    created: Date;
+    creator: string;
+    logText: string;
+}
+
 export interface ResponseGeomByCaseFolderId {
     Caller: string;
     CaseFolderId: number;

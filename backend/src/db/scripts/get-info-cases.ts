@@ -37,6 +37,7 @@ export const getInfoCasesByArea = `
            when c.CaseTypeId = 105 then 'Ambulanta'
            end as caseTypeName,
     c.created,
+    CONCAT(rtrim(ltrim(c.PhoneNumberAreaCode)),rtrim(ltrim(c.PhoneNumber))) as phoneNumber,
     c.creator,
     c.XCoordinate,
     c.YCoordinate,
@@ -60,6 +61,7 @@ export const getInfoCasesByArea = `
          caseTypeName,
          created,
          creator,
+         CONCAT(rtrim(ltrim(PhoneNumberAreaCode)),rtrim(ltrim(PhoneNumber))) as phoneNumber,
          XCoordinate,
          YCoordinate,
          caseIndex1Name,
@@ -79,33 +81,25 @@ export const getInfoCasesByArea = `
 `;
 
 export const getLogsByCaseFolderId = `
-  WITH ALL_LOGS AS (SELECT cfl.Created,
-                           cfl.Creator,
-                           cfl.LogText
-                    FROM cse_CaseFolderLog_tab cfl
-  WITH (NOLOCK)
-  WHERE
-    cfl.CaseFolderId = @caseFolderId
+  SELECT  cfl.Created AS Created,
+          cfl.Creator AS Creator,
+          cfl.LogText AS LogText
+  FROM cse_CaseFolderLog_tab cfl WITH (NOLOCK)
+  WHERE cfl.CaseFolderId = @caseFolderId
   UNION
-  SELECT cflf.Created,
-         cflf.Creator,
-         cflf.LogText
+  SELECT cflf.Created AS Created,
+         cflf.Creator AS Creator,
+         cflf.LogText AS LogText
   FROM cse_CaseFolderLogFinished_tab cflf WITH(NOLOCK)
   WHERE
     cflf.CaseFolderId = @caseFolderId
   UNION
-  SELECT cflr.Created,
-         cflr.Creator,
-         cflr.LogText
+  SELECT cflr.Created AS Created,
+         cflr.Creator AS Creator,
+         cflr.LogText AS LogText
   FROM cse_CaseFolderLogRejected_tab cflr WITH(NOLOCK)
   WHERE
-    cflr.CaseFolderId = @caseFolderId
-    )
-  SELECT created,
-         creator,
-         logText
-  FROM ALL_LOGS al
-  ORDER BY al.Created`;
+    cflr.CaseFolderId = @caseFolderId`;
 
 export const getLocationByCaseFolderId = ` 
   app_GetGeometryByFolder
