@@ -13,13 +13,19 @@ import {
     Typography,
     Paper,
     Stack,
-    Divider
+    Divider,
+    Checkbox,
+    FormGroup,
+    FormControlLabel
 } from "@mui/material";
 import CreateIcon from '@mui/icons-material/Create';
 import UndoIcon from '@mui/icons-material/Undo';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import SearchIcon from '@mui/icons-material/Search';
 import StopIcon from '@mui/icons-material/Stop';
+import FireTruckIcon from '@mui/icons-material/FireTruck';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import LocalPoliceIcon from '@mui/icons-material/LocalPolice';
 
 dayjs.extend(utc);
 
@@ -95,6 +101,46 @@ export const MapControls = ({
                     <Button onClick={onUndo} startIcon={<UndoIcon/>}>Undo</Button>
                     <Button onClick={onReset} startIcon={<DeleteSweepIcon/>} color="error">Reset</Button>
                 </ButtonGroup>
+                <Divider sx={{my: 1}}>Organizație</Divider>
+
+                <FormGroup row sx={{justifyContent: 'space-between', px: 0.5}}>
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#d32f2f', '&.Mui-checked': {color: '#d32f2f'}}}/>}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <LocalHospitalIcon sx={{color: '#d32f2f', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Ambulanță</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#1976d2', '&.Mui-checked': {color: '#1976d2'}}}/>}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <LocalPoliceIcon sx={{color: '#1976d2', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Poliție</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#e65100', '&.Mui-checked': {color: '#e65100'}}}/>}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <FireTruckIcon sx={{color: '#e65100', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Pompieri</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                </FormGroup>
 
                 <Divider sx={{my: 1}}>Interval Timp</Divider>
 

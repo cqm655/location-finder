@@ -8,10 +8,8 @@ import { FindByCaseFolderId } from './use-case/location-by-case-folder-id/locati
 import { ResponseCaseFolderIdDto } from './dto/response-case-folder-id.dto';
 import { GetCasesByArea } from './use-case/cases-by-location/get-cases-by-area.use-case';
 import { GetGeometryByCaseFolderId } from './use-case/get-geometry-by-folder-id/GetGeometryByCaseFolderId';
-import {
-  GeometryDto,
-  ShapeResponseDto,
-} from './dto/response-geometry-by-case-folder-id';
+import { ShapeResponseDto } from './dto/response-geometry-by-case-folder-id';
+import { GetCasesByCaseFolderId } from './use-case/cases-by-casefolderid/get-cases-by-casefolderid.use-case';
 
 @Injectable()
 export class AppService {
@@ -20,7 +18,16 @@ export class AppService {
     private readonly getCasesByArea: GetCasesByArea,
     private readonly findByCaseFolderId: FindByCaseFolderId,
     private readonly getGeomByCaseFolderId: GetGeometryByCaseFolderId,
+    private readonly getCasesByCaseFolderId: GetCasesByCaseFolderId,
   ) {}
+
+  public async getInfoByCaseFolderId(
+    caseFolderId: string,
+  ): Promise<ResponseCaseFolderIdDto[]> {
+    return await this.getCasesByCaseFolderId.casesByCaseFolderId(
+      parseInt(caseFolderId),
+    );
+  }
 
   public async getLogsByCaseFolder(
     caseFolderId: number,

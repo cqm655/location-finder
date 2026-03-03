@@ -15,11 +15,8 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('folderId/:id')
-  async getInfoByCaseFolderId(
-    @Param('id') id: string,
-  ): Promise<ResponseCaseFolderIdDto> {
-    const data = await this.appService.getLocationByCaseFolderId(parseInt(id));
-    return data;
+  async getInfoByCaseFolderId(@Param('id') id: string) {
+    return await this.appService.getInfoByCaseFolderId(id);
   }
 
   @Post('/by-area')

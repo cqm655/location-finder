@@ -54,15 +54,20 @@ export const AccordionComponent = ({data}: Props) => {
     };
 
     const handleLogs = async (id: number) => {
-        if (logsById[id]) return; // Nu mai descărca dacă le avem deja
+        if (logsById[id]) return;
 
         setLoadingLogs(prev => ({...prev, [id]: true}));
         try {
             const resp = await fetchLogs(id);
-            console.log(resp)
-            setLogsById(prev => ({...prev, [id]: resp}));
+
+            // Ensure 'resp' is an array. If it's an object containing the logs,
+            // access the specific property (e.g., resp.data).
+            // Using '?? []' handles the 'undefined' case.
+            const logsArray = Array.isArray(resp) ? resp : [];
+
+            setLogsById(prev => ({...prev, [id]: logsArray}));
         } catch (error) {
-            console.error("Eroare la loguri:", error);
+            console.error("Eroable la loguri:", error);
         } finally {
             setLoadingLogs(prev => ({...prev, [id]: false}));
         }

@@ -3,6 +3,7 @@ import { GetLogsInformationByCaseFolderId } from './logs-by-folder-id/get-logs-b
 import { FindByCaseFolderId } from './location-by-case-folder-id/location-by-case-folder.use-case';
 import { GetCasesByArea } from './cases-by-location/get-cases-by-area.use-case';
 import { GetGeometryByCaseFolderId } from './get-geometry-by-folder-id/GetGeometryByCaseFolderId';
+import { GetCasesByCaseFolderId } from './cases-by-casefolderid/get-cases-by-casefolderid.use-case';
 
 @Module({
   providers: [
@@ -10,12 +11,14 @@ import { GetGeometryByCaseFolderId } from './get-geometry-by-folder-id/GetGeomet
     FindByCaseFolderId,
     GetCasesByArea,
     GetGeometryByCaseFolderId,
+    GetCasesByCaseFolderId,
   ],
   exports: [
     GetLogsInformationByCaseFolderId,
     FindByCaseFolderId,
     GetCasesByArea,
     GetGeometryByCaseFolderId,
+    GetCasesByCaseFolderId,
   ],
 })
 export class UseCaseModule {}
