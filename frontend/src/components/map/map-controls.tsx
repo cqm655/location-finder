@@ -26,6 +26,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import FireTruckIcon from '@mui/icons-material/FireTruck';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import LocalPoliceIcon from '@mui/icons-material/LocalPolice';
+import {useStoreCaseTypeName} from "../../store/useStoreCaseTypeName.ts";
 
 dayjs.extend(utc);
 
@@ -49,6 +50,7 @@ export const MapControls = ({
     const [startTime, setStartTime] = useState<Dayjs | null>(dayjs().startOf('day'));
     const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day'));
     const geometry = useStoreGeometry((state) => state.geometry);
+    const {selectedOrgs, setOrg} = useStoreCaseTypeName();
 
     const requestPayload = useMemo(() => ({
         type: "polygon",
@@ -105,7 +107,10 @@ export const MapControls = ({
 
                 <FormGroup row sx={{justifyContent: 'space-between', px: 0.5}}>
                     <FormControlLabel
-                        control={<Checkbox size="small" sx={{color: '#d32f2f', '&.Mui-checked': {color: '#d32f2f'}}}/>}
+                        control={<Checkbox size="small" sx={{color: '#d32f2f', '&.Mui-checked': {color: '#d32f2f'}}}
+                                           checked={selectedOrgs['Ambulanță']}
+                                           onChange={(e) => setOrg('Ambulanță', e.target.checked)}
+                                           size="small"/>}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <LocalHospitalIcon sx={{color: '#d32f2f', fontSize: 20}}/>
@@ -117,7 +122,10 @@ export const MapControls = ({
                         sx={{m: 0}}
                     />
                     <FormControlLabel
-                        control={<Checkbox size="small" sx={{color: '#1976d2', '&.Mui-checked': {color: '#1976d2'}}}/>}
+                        control={<Checkbox size="small" sx={{color: '#1976d2', '&.Mui-checked': {color: '#1976d2'}}}
+                                           checked={selectedOrgs['Poliție']}
+                                           onChange={(e) => setOrg('Poliție', e.target.checked)}
+                                           size="small"/>}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <LocalPoliceIcon sx={{color: '#1976d2', fontSize: 20}}/>
@@ -129,7 +137,10 @@ export const MapControls = ({
                         sx={{m: 0}}
                     />
                     <FormControlLabel
-                        control={<Checkbox size="small" sx={{color: '#e65100', '&.Mui-checked': {color: '#e65100'}}}/>}
+                        control={<Checkbox size="small" sx={{color: '#e65100', '&.Mui-checked': {color: '#e65100'}}}
+                                           checked={selectedOrgs['Pompieri']}
+                                           onChange={(e) => setOrg('Pompieri', e.target.checked)}
+                                           size="small"/>}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <FireTruckIcon sx={{color: '#e65100', fontSize: 20}}/>
