@@ -1,5 +1,5 @@
 import CircularProgress from "@mui/material/CircularProgress";
-import {Box, Button, TextField, InputAdornment} from "@mui/material";
+import {Box, Button, TextField} from "@mui/material";
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import {useStateCasefolderId} from "../../store/useStoreGetByCasefolderId.ts";
 import {useState} from "react";
@@ -60,9 +60,9 @@ export const CasefolderidInput = () => {
                 }}
             >
                 <TextField
-                    placeholder="ID Dosar (Casefolder)..."
+                    placeholder="ID Dosar ..."
                     variant="standard"
-                    size="small"
+                    size="medium"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -71,8 +71,8 @@ export const CasefolderidInput = () => {
                         sx: {
                             px: 1.5,
                             py: 0.5,
-                            fontSize: '0.9rem',
-                            width: "180px" // Puțin mai lat pentru lizibilitate
+                            fontSize: '1.2rem',
+                            width: "170px" // Puțin mai lat pentru lizibilitate
                         }
                     }}
                 />

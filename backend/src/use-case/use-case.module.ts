@@ -4,6 +4,8 @@ import { FindByCaseFolderId } from './location-by-case-folder-id/location-by-cas
 import { GetCasesByArea } from './cases-by-location/get-cases-by-area.use-case';
 import { GetGeometryByCaseFolderId } from './get-geometry-by-folder-id/GetGeometryByCaseFolderId';
 import { GetCasesByCaseFolderId } from './cases-by-casefolderid/get-cases-by-casefolderid.use-case';
+import { GetAudio } from './audio/get-audio';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   providers: [
@@ -12,6 +14,8 @@ import { GetCasesByCaseFolderId } from './cases-by-casefolderid/get-cases-by-cas
     GetCasesByArea,
     GetGeometryByCaseFolderId,
     GetCasesByCaseFolderId,
+    GetAudio,
+    ConfigService,
   ],
   exports: [
     GetLogsInformationByCaseFolderId,
@@ -19,6 +23,8 @@ import { GetCasesByCaseFolderId } from './cases-by-casefolderid/get-cases-by-cas
     GetCasesByArea,
     GetGeometryByCaseFolderId,
     GetCasesByCaseFolderId,
+    GetAudio,
+    ConfigService,
   ],
 })
 export class UseCaseModule {}

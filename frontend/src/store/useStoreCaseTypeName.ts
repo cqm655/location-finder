@@ -1,14 +1,25 @@
-// În store/useStoreFilters.ts (exemplu)
 import {create} from "zustand";
 
-export const useStoreCaseTypeName = create((set) => ({
+
+interface CaseTypeState {
+    selectedOrgs: {
+        Ambulanță: boolean;
+        Poliție: boolean;
+        Pompieri: boolean;
+        [key: string]: boolean; // Permite accesul dinamic prin string (index signature)
+    };
+    // val este boolean (true/false) conform structurii de mai sus
+    setOrg: (name: string, val: boolean) => void;
+}
+
+export const useStoreCaseTypeName = create<CaseTypeState>((set) => ({
     selectedOrgs: {
         Ambulanță: true,
         Poliție: true,
-        Pompieri: true
-        ,
+        Pompieri: true,
     },
-    setOrg: (name: string, val: number) => set((state) => ({
-        selectedOrgs: {...state.selectedOrgs, [name]: val}
-    }))
+    setOrg: (name, val) =>
+        set((state) => ({
+            selectedOrgs: {...state.selectedOrgs, [name]: val}
+        }))
 }));

@@ -27,6 +27,8 @@ import FireTruckIcon from '@mui/icons-material/FireTruck';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import LocalPoliceIcon from '@mui/icons-material/LocalPolice';
 import {useStoreCaseTypeName} from "../../store/useStoreCaseTypeName.ts";
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 dayjs.extend(utc);
 
@@ -51,6 +53,7 @@ export const MapControls = ({
     const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day'));
     const geometry = useStoreGeometry((state) => state.geometry);
     const {selectedOrgs, setOrg} = useStoreCaseTypeName();
+    const [isShow, setIsHidden] = useState<boolean>(false);
 
     const requestPayload = useMemo(() => ({
         type: "polygon",
@@ -59,12 +62,16 @@ export const MapControls = ({
         endDate: endTime?.utc().format() || dayjs().toISOString(),
     }), [geometry, startTime, endTime]);
 
-    const {fetchData, error} = useGetByGeometry(); // Hook-ul acum doar ne dă funcția
+    const {fetchData} = useGetByGeometry(); // Hook-ul acum doar ne dă funcția
 
     const handleSearch = () => {
         // Apelăm manual funcția cu datele pregătite în useMemo
         fetchData(requestPayload);
     };
+
+    const handleControlPanel = () => {
+        setIsHidden(!isShow)
+    }
     return (
         <Paper
             elevation={4}
@@ -77,15 +84,25 @@ export const MapControls = ({
                 p: 2,
                 borderRadius: 2,
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(4px)'
+                backdropFilter: 'blur(4px)',
+
             }}
         >
             <Typography variant="subtitle2"
-                        sx={{mb: 1.5, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1}}>
-                <CreateIcon fontSize="small"/> Control Zonă Căutare
+                        sx={{
+                            mb: 1.5,
+                            fontWeight: 'bold',
+                            justifyContent: 'space-between',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                        }}>
+                <CreateIcon fontSize="small"/> Căutare
+                <Button color={"info"} variant={"outlined"} onClick={handleControlPanel}>
+                    {isShow ? <ExpandLessIcon fontSize="small"/> : <ExpandMoreIcon fontSize="small"/>}
+                </Button>
             </Typography>
-
-            <Stack spacing={2}>
+            {isShow && <Stack spacing={2}>
                 {/* Butonul Principal de Desenare */}
                 <Button
                     fullWidth
@@ -110,7 +127,7 @@ export const MapControls = ({
                         control={<Checkbox size="small" sx={{color: '#d32f2f', '&.Mui-checked': {color: '#d32f2f'}}}
                                            checked={selectedOrgs['Ambulanță']}
                                            onChange={(e) => setOrg('Ambulanță', e.target.checked)}
-                                           size="small"/>}
+                        />}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <LocalHospitalIcon sx={{color: '#d32f2f', fontSize: 20}}/>
@@ -125,7 +142,7 @@ export const MapControls = ({
                         control={<Checkbox size="small" sx={{color: '#1976d2', '&.Mui-checked': {color: '#1976d2'}}}
                                            checked={selectedOrgs['Poliție']}
                                            onChange={(e) => setOrg('Poliție', e.target.checked)}
-                                           size="small"/>}
+                        />}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <LocalPoliceIcon sx={{color: '#1976d2', fontSize: 20}}/>
@@ -140,7 +157,7 @@ export const MapControls = ({
                         control={<Checkbox size="small" sx={{color: '#e65100', '&.Mui-checked': {color: '#e65100'}}}
                                            checked={selectedOrgs['Pompieri']}
                                            onChange={(e) => setOrg('Pompieri', e.target.checked)}
-                                           size="small"/>}
+                        />}
                         label={
                             <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                                 <FireTruckIcon sx={{color: '#e65100', fontSize: 20}}/>
@@ -193,7 +210,8 @@ export const MapControls = ({
                         Caută
                     </Button>
                 </Box>
-            </Stack>
+            </Stack>}
+
         </Paper>
     );
 };

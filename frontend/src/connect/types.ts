@@ -12,11 +12,14 @@ interface PolygonGeometry {
 export interface ApiCaseFolderIdResponse {
     caller?: string;
     caseFolderId?: number;
+    caseId?: number;
     caseIndexComment?: string;
+    caseFolderIndexComment?: string;
     createdAt?: string;
     createdBy?: string;
     geometry?: PolygonGeometry;
     locality?: string;
+    address?: number;
     phoneNumber?: string;
     provider?: string;
     status?: string;
@@ -32,6 +35,7 @@ export interface ApiCaseFolderIdResponse {
     XCoordinate?: number;
     YCoordinate?: number;
     creator?: string;
+    orderer?: string;
 }
 
 
@@ -41,15 +45,18 @@ export interface ApiPolygoneResponse {
     startDate: string;
     endDate: string;
     caseFolderId?: number;
+    caseId?: number;
     caseIndex1Name: string;
     caseIndex2Name?: string;
     caseTypeId?: number;
     caseTypeName?: string;
     createdDate?: Date;
-    XCoordinate: number;
-    YCoordinate: number;
+    xCoordinate: number;
+    yCoordinate: number;
+    address?: number;
     caller: string;
     caseIndexComment: string;
+    caseFolderIndexComment?: string;
     createdAt: string;
     createdBy: string;
     locality: string;
@@ -58,6 +65,7 @@ export interface ApiPolygoneResponse {
     status: string;
     street: string;
     streetNumber: string;
+    orderer?: string;
 }
 
 export interface ApiLogsByCaseFolderIdResponse {
@@ -67,18 +75,6 @@ export interface ApiLogsByCaseFolderIdResponse {
 }
 
 export interface ResponseGeomByCaseFolderId {
-    Caller: string;
-    CaseFolderId: number;
-    CaseIndexComment: string;
-    CaseTypeName: string;
-    Created: Date;
-    Creator: string;
-    Locality: string;
-    Municipality: string;
-    PhoneNumber: string;
-    Status: string;
-    Street: string;
-    StreetNo: string;
     geometry: string;
 }
 

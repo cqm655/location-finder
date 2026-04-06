@@ -3,13 +3,13 @@ import type {ApiCaseFolderIdResponse} from "../connect/types.ts";
 
 
 export interface CasefolderDataStore {
-    data: ApiCaseFolderIdResponse[],
+    data: ApiCaseFolderIdResponse[] | null,
     setCaseFolderData: (data: ApiCaseFolderIdResponse[]) => void,
     resetCaseFolderData: () => void;
 }
 
 export const useStoreSetSideBardAccordionData = create<CasefolderDataStore>((set) => ({
-    data: [],
+    data: null,
     setCaseFolderData: (newData) =>
         set(() => ({
             data: Array.isArray(newData) ? newData : [newData],
