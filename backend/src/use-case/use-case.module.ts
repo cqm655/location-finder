@@ -5,9 +5,14 @@ import { GetCasesByArea } from './cases-by-location/get-cases-by-area.use-case';
 import { GetGeometryByCaseFolderId } from './get-geometry-by-folder-id/GetGeometryByCaseFolderId';
 import { GetCasesByCaseFolderId } from './cases-by-casefolderid/get-cases-by-casefolderid.use-case';
 import { GetAudio } from './audio/get-audio';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
   providers: [
     GetLogsInformationByCaseFolderId,
     FindByCaseFolderId,

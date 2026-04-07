@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useState, useRef} from "react";
 import {
     Accordion, AccordionDetails, AccordionSummary,
     Button, Typography, Box, Divider, Stack, Chip, Paper
@@ -48,6 +48,7 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
     // Audio player
     const [audioById, setAudioById] = useState<Record<number, any[]>>({});
     const [loadingAudio, setLoadingAudio] = useState<Record<number, boolean>>({});
+    const currentlyPlayingRef = useRef<HTMLAudioElement | null>(null);
 
     // Hook-uri din store-uri globale pentru interacțiunea cu harta
     const setPointOnMap = useStoreAddPointOnMap((s) => s.setCoordinate);
@@ -59,6 +60,22 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
     const {fetchGeom} = useGetGeomByCasefolderid();
     const {fetchLogs} = useGetLogsByCasefolderId();
 
+
+    /**
+     * Player Audio
+     */
+    const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+        const audioElement = e.currentTarget;
+
+        // Dacă există deja ceva care cântă și nu este player-ul curent
+        if (currentlyPlayingRef.current && currentlyPlayingRef.current !== audioElement) {
+            currentlyPlayingRef.current.pause(); // Oprim player-ul vechi
+            // currentlyPlayingRef.current.currentTime = 0; // Opțional: resetează la început
+        }
+
+        // Actualizăm referința cu player-ul nou
+        currentlyPlayingRef.current = audioElement;
+    };
 
     const handleAudio = async (id: number) => {
         if (audioById[id]) return; // Nu reîncărcăm dacă există deja
@@ -319,6 +336,7 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                                                 controls
                                                                 preload="none"
                                                                 style={{width: '100%', height: '35px'}}
+                                                                onPlay={handlePlay}
                                                             >
                                                                 <source
                                                                     src={`${soundPath}/audio/stream/${caseFolderId}/${index}`}

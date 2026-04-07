@@ -17,6 +17,12 @@ import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
 import * as path from 'path';
 import * as fs from 'node:fs';
 
+interface AudioRecord {
+  FilePath: string;
+  OperatorName?: string;
+  // adaugă și alte coloane dacă ai (ex: CreatedDate)
+}
+
 @Controller({
   path: '',
   version: '1',
@@ -56,42 +62,44 @@ export class AppController {
   @Get('/audio/stream/:caseFolderId/:fileIndex')
   async streamAudio(
     @Param('caseFolderId') caseFolderId: number,
-    @Param('fileIndex') fileIndex: number, // Indexul vine din URL (0, 1, 2...)
+    @Param('fileIndex') fileIndex: number,
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    // 1. Luăm lista
-    const audioFiles = await this.appService.getAudio(caseFolderId);
+    const audioFiles: any[] = await this.appService.getAudio(caseFolderId);
 
-    // 2. Verificăm indexul
     if (!audioFiles || !audioFiles[fileIndex]) {
-      return res.status(404).send('Index invalid');
+      return res.status(404).send('Înregistrarea nu există.');
     }
 
-    // 3. EXTRAGEM STRING-UL (Aici era greșeala)
-    // Verifică dacă în consolă vezi ce proprietăți are obiectul
-    console.log('Obiectul de la index:', audioFiles[fileIndex]);
+    // 2. Extragem calea indiferent dacă e obiect sau string
+    const item = audioFiles[fileIndex];
+    const relativePath =
+      item.FileName ||
+      item.FileName ||
+      (typeof item === 'string' ? item : null);
+    // 3. Preluăm căile din ENV
+    const rootPaths = [process.env.AUDIO_ROOT_1, process.env.AUDIO_ROOT_2];
 
-    // Dacă obiectul tău are cheia "FilePath":
-    // @ts-ignore
-    const relativePath = audioFiles[fileIndex].FileName;
+    let absolutePath = '';
+    let fileExists = false;
 
-    const normalizedRelative = relativePath.replace(/\//g, '\\');
+    // 3. Logica de căutare "Fallback"
+    for (const root of rootPaths) {
+      const fullPath = path.join(root, String(relativePath));
 
-    // Dacă nu ești sigur de numele cheii, poți încerca să vezi prima valoare:
-    // const relativePath = Object.values(audioFiles[fileIndex])[0];
+      if (fs.existsSync(fullPath)) {
+        absolutePath = fullPath;
+        fileExists = true;
+        break; // Am găsit fișierul, nu mai căutăm în restul locațiilor
+      }
+    }
 
-    const rootPath = '\\\\10.2.20.155\\RecordedSoundFiles';
-    const absolutePath = path.join(rootPath, normalizedRelative);
-
-    console.log('Calea finală construită:', absolutePath);
-
-    // 5. Verificăm dacă fișierul există fizic pe disc
-    if (!fs.existsSync(absolutePath)) {
-      console.error(`Fisier negasit la: ${absolutePath}`);
-      return res
-        .status(HttpStatus.NOT_FOUND)
-        .send('Fișierul nu a fost găsit pe serverul de stocare.');
+    if (!fileExists) {
+      console.error(
+        `Fișierul nu a fost găsit pe niciun server: ${relativePath}`,
+      );
+      return res.status(404).send('Fișierul audio nu a fost găsit.');
     }
 
     // --- Logica de Streaming ---
