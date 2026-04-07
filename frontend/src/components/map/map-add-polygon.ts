@@ -1,5 +1,5 @@
 import * as maptilersdk from "@maptiler/sdk";
-import {points} from "@turf/turf";
+import {points} from "@turf/turf"; // Redenumește pentru claritate
 
 export const mapAddPolygon = (map: maptilersdk.Map) => {
     map.addSource("polygon-source", {

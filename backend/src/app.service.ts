@@ -8,10 +8,9 @@ import { FindByCaseFolderId } from './use-case/location-by-case-folder-id/locati
 import { ResponseCaseFolderIdDto } from './dto/response-case-folder-id.dto';
 import { GetCasesByArea } from './use-case/cases-by-location/get-cases-by-area.use-case';
 import { GetGeometryByCaseFolderId } from './use-case/get-geometry-by-folder-id/GetGeometryByCaseFolderId';
-import {
-  GeometryDto,
-  ShapeResponseDto,
-} from './dto/response-geometry-by-case-folder-id';
+import { GetCasesByCaseFolderId } from './use-case/cases-by-casefolderid/get-cases-by-casefolderid.use-case';
+import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
+import { GetAudio } from './use-case/audio/get-audio';
 
 @Injectable()
 export class AppService {
@@ -20,7 +19,17 @@ export class AppService {
     private readonly getCasesByArea: GetCasesByArea,
     private readonly findByCaseFolderId: FindByCaseFolderId,
     private readonly getGeomByCaseFolderId: GetGeometryByCaseFolderId,
+    private readonly getCasesByCaseFolderId: GetCasesByCaseFolderId,
+    private readonly audio: GetAudio,
   ) {}
+
+  public async getInfoByCaseFolderId(
+    caseFolderId: string,
+  ): Promise<ResponseCaseFolderIdDto[]> {
+    return await this.getCasesByCaseFolderId.casesByCaseFolderId(
+      parseInt(caseFolderId),
+    );
+  }
 
   public async getLogsByCaseFolder(
     caseFolderId: number,
@@ -36,15 +45,19 @@ export class AppService {
 
   public async getGeometryByCaseFolderId(
     id: number,
-  ): Promise<ShapeResponseDto[]> {
+  ): Promise<CaseFolderMobilePosition[]> {
     return await this.getGeomByCaseFolderId.getCaseGeom(id);
   }
 
-  public async getLocationByCaseFolderId(
-    caseFolderId: number,
-  ): Promise<ResponseCaseFolderIdDto> {
-    return await this.findByCaseFolderId.getLocationByCaseFolderId(
-      caseFolderId,
-    );
+  public async getAudio(id: number) {
+    return await this.audio.getRelativePath(id);
   }
+
+  // public async getLocationByCaseFolderId(
+  //   caseFolderId: number,
+  // ): Promise<ResponseCaseFolderIdDto> {
+  //   return await this.findByCaseFolderId.getLocationByCaseFolderId(
+  //     caseFolderId,
+  //   );
+  // }
 }

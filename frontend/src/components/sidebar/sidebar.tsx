@@ -15,24 +15,23 @@ export const Sidebar = () => {
     const data = useStoreSetSideBardAccordionData((state) => state.data);
 
     return (
-        <div style={{
-            width: !isOpen ? "0px" : "fit-content",
-            display: 'flex',
-            justifyContent: "end",
-            transition: 'width 0.6s ease'
+        <Box style={{
+            width: !isOpen ? "0px" : "400px",
+            justifyContent: "center",
+            transition: 'width 0.6s ease',
         }}>
 
             <Stack spacing={2} style={{overflow: 'auto', height: '92vh'}}>
-                <div style={{marginRight: '10px'}}>
+                <Box style={{marginRight: '10px'}}>
                     {loading && <Box sx={{width: '100%'}}>
                         <LinearProgress color={"error"}/>
                     </Box>}
-                </div>
-                <div>
-                    {resp && <AccordionComponent data={resp}/>}
-                    {data && <AccordionComponent data={data}/>}
-                </div>
+                </Box>
+                <Box>
+                    {data && data.length > 0 && <AccordionComponent data={data}/>}
+                    {(!data || data.length === 0) && resp && <AccordionComponent data={resp} disableFilter={true}/>}
+                </Box>
             </Stack>
-        </div>
+        </Box>
     )
 }

@@ -11,6 +11,8 @@ class Database {
     const password = process.env.PASSWORD;
     const server = process.env.SERVER;
     const database = process.env.DATABASE;
+    // 1. Convertim portul la number (cu o valoare default dacă e nevoie, ex: 1433)
+    const databasePort = parseInt(process.env.DATABASE_PORT, 10);
 
     if (!userName || !password || !server || !database) {
       throw new Error('Missing environment variables');
@@ -26,9 +28,10 @@ class Database {
         },
       },
       options: {
-        port: 50389,
+        // 2. Acum databasePort este de tip number
+        port: databasePort,
         database: database,
-        requestTimeout: 0,
+        requestTimeout: 30000, // Recomandat să nu fie 0 (infinit) în producție
         encrypt: true,
         trustServerCertificate: true,
       },

@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { ResponseCaseFolderIdDto } from '../../dto/response-case-folder-id.dto';
 import Database from '../../db/source.database';
+import { getInfoCasesById } from '../../db/scripts/get-info-cases';
 import { TYPES } from 'tedious';
-import { getLocationByCaseFolderId } from '../../db/scripts/get-info-cases';
-import { CaseFolderMobilePosition } from '../../dto/response-mobileposition.dto';
 
 @Injectable()
-export class GetGeometryByCaseFolderId {
-  constructor() {}
-
-  public async getCaseGeom(
+export class GetCasesByCaseFolderId {
+  public async casesByCaseFolderId(
     caseFolderId: number,
-  ): Promise<CaseFolderMobilePosition[]> {
-    const caseFolderMobilePosition: CaseFolderMobilePosition[] = [];
+  ): Promise<ResponseCaseFolderIdDto[]> {
+    const infoCaseByCaseFolderId: ResponseCaseFolderIdDto[] = [];
 
     if (!caseFolderId) {
       return [];
@@ -19,7 +17,7 @@ export class GetGeometryByCaseFolderId {
 
     const db = new Database();
 
-    const baseQuery = getLocationByCaseFolderId;
+    const baseQuery = getInfoCasesById;
 
     try {
       await db.connect();
@@ -37,12 +35,12 @@ export class GetGeometryByCaseFolderId {
       );
 
       for (const result of results) {
-        caseFolderMobilePosition.push(result);
+        infoCaseByCaseFolderId.push(result);
       }
 
-      return caseFolderMobilePosition;
-    } catch (e) {
-      throw e;
+      return infoCaseByCaseFolderId;
+    } catch (error) {
+      console.log(error.message);
     } finally {
       db.close();
     }

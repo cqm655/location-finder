@@ -2,7 +2,7 @@ import axios, {type AxiosInstance, type AxiosResponse} from "axios";
 import type {ApiCaseFolderIdResponse} from "./types.ts";
 
 const apiClient: AxiosInstance = axios.create({
-    baseURL: 'http://localhost:3004/by-location',
+    baseURL: 'http://localhost:3004',
     headers: {'Content-Type': 'application/json'}
 })
 

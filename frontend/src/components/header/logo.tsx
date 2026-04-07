@@ -1,6 +1,21 @@
 import logo112 from '../../assets/112.png'
+import {Box} from "@mui/material";
 
 export const Logo = () => {
-    return (<img style={{objectFit: "cover", height: "50px", padding: "10px"}}
-                 src={logo112} alt={"logo"}/>)
-}
+    return (
+        <Box
+            component="img"
+            src={logo112}
+            alt="logo"
+            sx={{
+                height: "50px",
+                width: "auto",
+                transition: "transform 0.2s ease",
+                cursor: "pointer",
+                "&:hover": {
+                    transform: "scale(1.05)"
+                }
+            }}
+        />
+    );
+};

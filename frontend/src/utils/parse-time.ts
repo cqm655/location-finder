@@ -1,4 +1,4 @@
-export const parseTime = (value: Date) => {
+export const parseTime = (value: Date | string) => {
     const date = new Date(value);
     return date.toLocaleString("ro-RO", {
         day: "2-digit",

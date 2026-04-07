@@ -5,9 +5,30 @@ import dayjs, {Dayjs} from 'dayjs';
 import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import utc from "dayjs/plugin/utc";
-import {DateTimeField} from "@mui/x-date-pickers";
-import './style.css'
-import {useStoreSetSideBardAccordionData} from "../../store/useStoreSetSideBardAccordionData.ts";
+import {DateTimePicker} from "@mui/x-date-pickers"; // Recomand DateTimePicker pentru popup
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    Typography,
+    Paper,
+    Stack,
+    Divider,
+    Checkbox,
+    FormGroup,
+    FormControlLabel
+} from "@mui/material";
+import CreateIcon from '@mui/icons-material/Create';
+import UndoIcon from '@mui/icons-material/Undo';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import SearchIcon from '@mui/icons-material/Search';
+import StopIcon from '@mui/icons-material/Stop';
+import FireTruckIcon from '@mui/icons-material/FireTruck';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import LocalPoliceIcon from '@mui/icons-material/LocalPolice';
+import {useStoreCaseTypeName} from "../../store/useStoreCaseTypeName.ts";
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 dayjs.extend(utc);
 
@@ -28,129 +49,169 @@ export const MapControls = ({
                                 onReset,
                             }: MapControlsProps) => {
 
-    const [startTime, setStartTime] = useState<Dayjs | null>(dayjs().startOf('day').add(3, 'hour'));
-    const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day').add(3, 'hour'));
-    const data = useStoreSetSideBardAccordionData((state) => state.data);
+    const [startTime, setStartTime] = useState<Dayjs | null>(dayjs().startOf('day'));
+    const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().endOf('day'));
     const geometry = useStoreGeometry((state) => state.geometry);
+    const {selectedOrgs, setOrg} = useStoreCaseTypeName();
+    const [isShow, setIsHidden] = useState<boolean>(false);
 
     const requestPayload = useMemo(() => ({
         type: "polygon",
         geometry: geometry,
-        startDate: startTime?.utc().format() || dayjs().endOf('day').add(3, 'hour').toString(),
-        endDate: endTime?.utc().format() || dayjs().endOf('day').add(3, 'hour').toString(),
+        startDate: startTime?.utc().format() || dayjs().toISOString(),
+        endDate: endTime?.utc().format() || dayjs().toISOString(),
     }), [geometry, startTime, endTime]);
 
+    const {fetchData} = useGetByGeometry(); // Hook-ul acum doar ne dă funcția
 
-    const {resp, error} = useGetByGeometry(requestPayload);
-
-    const onSearch = () => {
-        console.log("Trimis la backend:", requestPayload);
-        console.log("Răspuns backend:", resp);
-        console.log("Răspuns backend:", data);
-        console.log("Error backend:", error);
-
+    const handleSearch = () => {
+        // Apelăm manual funcția cu datele pregătite în useMemo
+        fetchData(requestPayload);
     };
 
-    const handleEndTimeChange = (newValue: Dayjs | null) => {
-        setEndTime(newValue);
-        // Dacă avem și startTime setat, triggerăm căutarea automat
-        if (newValue && startTime) {
-            onSearch();
-            if (!isDrawing) {          // 👈 doar dacă nu e deja activ
-                onToggleDrawing();
-            }
-        }
-    };
-
+    const handleControlPanel = () => {
+        setIsHidden(!isShow)
+    }
     return (
-        <div style={{display: "flex", flexDirection: "column", position: 'relative', zIndex: 10, padding: "8px"}}>
-            <button
-                onClick={onToggleDrawing}
-                className={"map-button"}
-                style={{
-                    padding: "8px 12px",
-                    color: "#fff",
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: isDrawing ? 'rgba(158, 36, 36, 0.8)' : 'rgba(78, 120, 73,0.8)'
-                }}
-            >
-                {isDrawing ? "Oprește desenarea zonei" : "Pornește desenarea zonei"}
-            </button>
+        <Paper
+            elevation={4}
+            sx={{
+                position: 'relative',
+                top: 20,
+                left: 20,
+                zIndex: 1000,
+                width: 320,
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(4px)',
 
-            <button
-                onClick={onUndo}
-                disabled={pointsCount === 0}
-                style={{
-                    padding: "8px 12px",
-                    backgroundColor: pointsCount === 0 ? "gray" : "#f39c12",
-                    color: "#fff",
-                    border: "none",
-                    cursor: pointsCount === 0 ? "not-allowed" : "pointer",
-                }}
-            >
-                Șterge ultimul punct
-            </button>
-
-            <button
-                onClick={onReset}
-                disabled={pointsCount === 0}
-                style={{
-                    padding: "8px 12px",
-                    backgroundColor: pointsCount === 0 ? "gray" : "#e74c3c",
-                    color: "#fff",
-                    border: "none",
-                    cursor: pointsCount === 0 ? "not-allowed" : "pointer",
-                }}
-            >
-                Resetează poligonul
-            </button>
-
-            <button
-                onClick={onSearch}
-                disabled={pointsCount === 0}
-                style={{
-                    padding: "8px 12px",
-                    backgroundColor: pointsCount === 0 ? "gray" : "blue",
-                    color: "#fff",
-                    border: "none",
-                    cursor: pointsCount === 0 ? "not-allowed" : "pointer",
-                }}
-            >
-                Cauta Cazuri
-            </button>
-
-            <div style={{
-                backgroundColor: "antiquewhite",
-                marginTop: "16px",
-                pointerEvents: "none",
             }}
+        >
+            <Typography variant="subtitle2"
+                        sx={{
+                            mb: 1.5,
+                            fontWeight: 'bold',
+                            justifyContent: 'space-between',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                        }}>
+                <CreateIcon fontSize="small"/> Căutare
+                <Button color={"info"} variant={"outlined"} onClick={handleControlPanel}>
+                    {isShow ? <ExpandLessIcon fontSize="small"/> : <ExpandMoreIcon fontSize="small"/>}
+                </Button>
+            </Typography>
+            {isShow && <Stack spacing={2}>
+                {/* Butonul Principal de Desenare */}
+                <Button
+                    fullWidth
+                    variant="contained"
+                    color={isDrawing ? "error" : "primary"}
+                    onClick={onToggleDrawing}
+                    startIcon={isDrawing ? <StopIcon/> : <CreateIcon/>}
+                    sx={{py: 1}}
+                >
+                    {isDrawing ? "Oprește desenarea" : "Pornește desenarea"}
+                </Button>
 
-            >
+                {/* Acțiuni secundare */}
+                <ButtonGroup fullWidth size="small" variant="outlined" disabled={pointsCount === 0}>
+                    <Button onClick={onUndo} startIcon={<UndoIcon/>}>Undo</Button>
+                    <Button onClick={onReset} startIcon={<DeleteSweepIcon/>} color="error">Reset</Button>
+                </ButtonGroup>
+                <Divider sx={{my: 1}}>Organizație</Divider>
+
+                <FormGroup row sx={{justifyContent: 'space-between', px: 0.5}}>
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#d32f2f', '&.Mui-checked': {color: '#d32f2f'}}}
+                                           checked={selectedOrgs['Ambulanță']}
+                                           onChange={(e) => setOrg('Ambulanță', e.target.checked)}
+                        />}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <LocalHospitalIcon sx={{color: '#d32f2f', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Ambulanță</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#1976d2', '&.Mui-checked': {color: '#1976d2'}}}
+                                           checked={selectedOrgs['Poliție']}
+                                           onChange={(e) => setOrg('Poliție', e.target.checked)}
+                        />}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <LocalPoliceIcon sx={{color: '#1976d2', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Poliție</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                    <FormControlLabel
+                        control={<Checkbox size="small" sx={{color: '#e65100', '&.Mui-checked': {color: '#e65100'}}}
+                                           checked={selectedOrgs['Pompieri']}
+                                           onChange={(e) => setOrg('Pompieri', e.target.checked)}
+                        />}
+                        label={
+                            <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                                <FireTruckIcon sx={{color: '#e65100', fontSize: 20}}/>
+                                <Typography variant="caption"
+                                            sx={{fontSize: '0.65rem', fontWeight: 'bold'}}>Pompieri</Typography>
+                            </Box>
+                        }
+                        labelPlacement="bottom"
+                        sx={{m: 0}}
+                    />
+                </FormGroup>
+
+                <Divider sx={{my: 1}}>Interval Timp</Divider>
+
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-
-                    <DateTimeField
-                        style={{width: "160px"}}
-                        label="Început de interval"
-                        defaultValue={dayjs().startOf('day')}
-                        format="YYYY:MM:DD HH:mm"
-                        onChange={setStartTime}
-                        ampm={false}
-                        // disabled={pointsCount === 0 ? true : false}
-                    />
-
-                    <DateTimeField
-                        label="Început de interval"
-                        style={{width: "160px"}}
-                        defaultValue={dayjs().endOf('day')}
-                        format="YYYY:MM:DD HH:mm"
-                        onChange={handleEndTimeChange}
-                        ampm={false}
-                        // disabled={pointsCount === 0 ? true : false}
-                    />
+                    <Stack spacing={2}>
+                        <DateTimePicker
+                            label="Început"
+                            value={startTime}
+                            onChange={(newValue) => setStartTime(newValue)}
+                            ampm={false}
+                            slotProps={{textField: {size: 'small', fullWidth: true}}}
+                        />
+                        <DateTimePicker
+                            label="Sfârșit"
+                            value={endTime}
+                            onChange={(newValue) => {
+                                setEndTime(newValue);
+                                if (newValue && !isDrawing) handleSearch();
+                            }}
+                            ampm={false}
+                            slotProps={{textField: {size: 'small', fullWidth: true}}}
+                        />
+                    </Stack>
                 </LocalizationProvider>
-            </div>
-        </div>
+
+                {/* Info Points & Search */}
+                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1}}>
+                    <Typography variant="caption" color="text.secondary">
+                        Puncte poligon: <strong>{pointsCount}</strong>
+                    </Typography>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        startIcon={<SearchIcon/>}
+                        disabled={pointsCount < 3}
+                        onClick={handleSearch}
+                    >
+                        Caută
+                    </Button>
+                </Box>
+            </Stack>}
+
+        </Paper>
     );
 };
-
