@@ -5,7 +5,7 @@ import { connectToShare } from './use-case/help';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  connectToShare();
+  // connectToShare();
 
   app.enableCors({
     origin: 'http://localhost:5173',

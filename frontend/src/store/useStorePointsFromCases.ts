@@ -9,8 +9,8 @@ export interface PointStore {
     caseFolderId: number;
     caseTypeId: number;
     creator: string;
-    XCoordinate: number;
-    YCoordinate: number;
+    xCoordinate: number;
+    yCoordinate: number;
 }
 
 interface CasePointsMapStore {

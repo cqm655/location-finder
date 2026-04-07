@@ -11,7 +11,7 @@ interface PolygonGeometry {
 
 export interface ApiCaseFolderIdResponse {
     caller?: string;
-    caseFolderId?: number;
+    CaseFolderId?: number;
     caseId?: number;
     caseIndexComment?: string;
     caseFolderIndexComment?: string;

@@ -26,7 +26,7 @@ export const useGetByGeometry = () => {
         try {
             const response = await apiRequest<ApiCaseFolderIdResponse[]>('by-area', 'POST', payload);
             setResp(response);
-
+            console.log(response);
             // Mapare sigură și filtrare
             const safePoints = response
                 .filter(item => item.XCoordinate !== undefined && item.YCoordinate !== undefined)
@@ -35,7 +35,7 @@ export const useGetByGeometry = () => {
                     lat: item.XCoordinate!,
                     caseIndex1Name: item.caseIndex1Name || "",
                     caseIndex2Name: item.caseIndex2Name || "",
-                    caseFolderId: item.caseFolderId!,
+                    caseFolderId: item.CaseFolderId!,
                     caseTypeId: item.caseTypeId || 0,
                     phoneNumber: item.phoneNumber || '',
                     caseTypeName: item.caseTypeName || "",
@@ -43,10 +43,10 @@ export const useGetByGeometry = () => {
                     caller: item.caller || "",
                     created: item.created ? new Date(item.created) : new Date(),
                     creator: item.creator || "",
-                    XCoordinate: item.XCoordinate!,
-                    YCoordinate: item.YCoordinate!,
+                    xCoordinate: item.XCoordinate!,
+                    yCoordinate: item.YCoordinate!,
                 }));
-
+            console.log(safePoints)
             // Actualizăm Store-urile globale
             stateByGeometry(safePoints);
             setPoint(safePoints);

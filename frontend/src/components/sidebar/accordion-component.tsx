@@ -307,7 +307,14 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                     </Paper>
                                     {/* Secțiune Înregistrări Audio */}
                                     <Paper variant="outlined"
-                                           sx={{p: 2, bgcolor: '#f0f4f8', mt: 2, height: "300px", overflowY: "scroll"}}>
+                                           sx={{
+                                               p: 2,
+                                               bgcolor: '#f0f4f8',
+                                               mt: 2,
+                                               height: !audioById[caseFolderId] ? "50px" : "100%",
+                                               maxHeight: "300px",
+                                               overflow: audioById[caseFolderId] ? "scroll" : "hidden"
+                                           }}>
                                         <Typography variant="subtitle2" gutterBottom
                                                     sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                                             <HistoryIcon fontSize="small" color="secondary"/> Înregistrări Apel
@@ -327,7 +334,11 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                                 {audioById[caseFolderId].length > 0 ? (
                                                     audioById[caseFolderId].map((file, index) => (
                                                         <Box key={index}
-                                                             sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
+                                                             sx={{
+                                                                 display: 'flex',
+                                                                 flexDirection: 'column',
+                                                                 gap: 0.5
+                                                             }}>
                                                             <Typography variant="caption">
                                                                 Înregistrare
                                                                 #{index + 1} - {file.OperatorName || 'Audio'}
@@ -352,6 +363,8 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                                 )}
                                             </Stack>
                                         )}
+
+
                                     </Paper>
                                     {/* Chip-uri pentru selecția locațiilor automate (AML/MLP) */}
                                     <Paper variant="outlined" sx={{p: 2, bgcolor: '#f5faff'}}>
