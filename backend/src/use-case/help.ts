@@ -12,7 +12,7 @@ export const getDateTimeFormated = (dateTime: Date) => {
 export const connectToShare = () => {
   return new Promise((resolve, reject) => {
     // Comanda care mapează folderul de rețea cu user și parolă
-    const command = `net use \\\\10.2.20.155\\RecordedSoundFiles /user:"112MD\\iurii.balan" "FordFusion2022"`;
+    const command = `net use \\\\localhost\\RecordedSoundFiles /user:"user" "pass"`;
 
     exec(command, (error, stdout, stderr) => {
       if (error) {
