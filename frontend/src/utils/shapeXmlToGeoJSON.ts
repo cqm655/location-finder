@@ -136,7 +136,7 @@ export function parseMobilePosition(xmlString: string): ParsedMobilePosition | n
         if (lt && lg) geometry = {type: "Point", coordinates: [parseFloat(lg), parseFloat(lt)]};
     } else if (xmlString.includes("<coord>")) {
         // Fallback pentru MLP vechi (DMS)
-        geometry = parseMLPCoords(xmlString);
+        geometry = parseMLPCoordsReal(xmlString);
     } else if (xmlString.includes("&lt;coord&gt;")) {
         // Fallback MLP cu tag-uri HTML-escaped (versiunea veche)
         geometry = parseMLPCoords(xmlString);
@@ -161,6 +161,18 @@ export function parseMobilePosition(xmlString: string): ParsedMobilePosition | n
             }]
         }
     };
+}
+
+function parseMLPCoordsReal(xml: string): Geometry | null {
+    const coords: [number, number][] = [];
+    const coordRegex = /<coord>\s*<X>(.*?)<\/X>\s*<Y>(.*?)<\/Y>\s*<\/coord>/g;
+    let match;
+    while ((match = coordRegex.exec(xml)) !== null) {
+        const lat = dmsToDecimal(match[1].trim());
+        const lon = dmsToDecimal(match[2].trim());
+        if (lat !== null && lon !== null) coords.push([lon, lat]);
+    }
+    return coords.length > 0 ? {type: "Polygon", coordinates: [coords]} : null;
 }
 
 // Helper pentru parsare MLP (coord X/Y din LinearRing)
