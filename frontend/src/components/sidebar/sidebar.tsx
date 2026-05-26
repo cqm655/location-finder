@@ -8,13 +8,11 @@ import {useStoreSetSideBardAccordionData} from "../../store/useStoreSetSideBardA
 
 export const Sidebar = () => {
 
-
     const {resp} = useGetByCaseFolderId()
     const loading = useStateCasefolderId((state) => state.isLoading)
     const isOpen = useStoreToggleSideBar((state) => state.isOpen)
     const data = useStoreSetSideBardAccordionData((state) => state.data);
-    console.log(data)
-    console.log(resp)
+
     return (
         <Box style={{
             width: !isOpen ? "0px" : "400px",

@@ -17,6 +17,8 @@ import {getSsuIconType} from "../../utils/parse-ssu-icon.ts";
 import Doc from "../../assets/doc.png";
 import {useGetLogsByCasefolderId} from "../../connect/get-logs-by-casefolderid.ts";
 import ArticleIcon from '@mui/icons-material/Article';
+import DownloadIcon from '@mui/icons-material/Download';
+import IconButton from '@mui/material/IconButton'; // Adaugă și IconButton dacă nu e importat
 
 // --- IMPORTĂ STORE-UL DE FILTRARE ---
 import {useStoreCaseTypeName} from "../../store/useStoreCaseTypeName.ts";
@@ -41,7 +43,7 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
     // Stări locale pentru gestionarea datelor preluate asincron pentru fiecare caz în parte
     const [geomById, setGeomById] = useState<Record<number, GeometryWithDate[]>>({}); // Geometria per ID caz
     const [selectedIdx, setSelectedIdx] = useState<Record<number, number | null>>({}); // Indexul chip-ului de locație selectat
-    const [expandedId, setExpandedId] = useState<number | null>(null); // ID-ul acordeonului deschis momentan
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [logsById, setLogsById] = useState<Record<number, any[]>>({}); // Logurile de activitate per ID caz
     const [loadingLogs, setLoadingLogs] = useState<Record<number, boolean>>({}); // Starea de loading pentru loguri
 
@@ -160,6 +162,27 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
             setLoadingLogs(prev => ({...prev, [id]: false}));
         }
     }
+
+    const downloadAudio = async (url: string, fileName: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName.endsWith('.mp3') ? fileName : `${fileName}.mp3`;
+
+            document.body.appendChild(link);
+            link.click();
+
+            // Curățăm memoria
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Eroare la descărcarea fișierului:", error);
+        }
+    };
 
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, p: 1}}>
@@ -332,30 +355,46 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                         ) : (
                                             <Stack spacing={1}>
                                                 {audioById[caseFolderId].length > 0 ? (
-                                                    audioById[caseFolderId].map((file, index) => (
-                                                        <Box key={index}
-                                                             sx={{
-                                                                 display: 'flex',
-                                                                 flexDirection: 'column',
-                                                                 gap: 0.5
-                                                             }}>
-                                                            <Typography variant="caption">
-                                                                Înregistrare
-                                                                #{index + 1} - {file.OperatorName || 'Audio'}
-                                                            </Typography>
-                                                            <audio
-                                                                controls
-                                                                preload="none"
-                                                                style={{width: '100%', height: '35px'}}
-                                                                onPlay={handlePlay}
-                                                            >
-                                                                <source
-                                                                    src={`${soundPath}/audio/stream/${caseFolderId}/${index}`}
-                                                                    type="audio/mpeg"
-                                                                />
-                                                            </audio>
-                                                        </Box>
-                                                    ))
+                                                    audioById[caseFolderId].map((file, index) => {
+                                                        const audioUrl = `${soundPath}/audio/stream/${caseFolderId}/${index}`;
+                                                        const fileName = file.FileName || file.OperatorName || `Inregistrare_${caseFolderId}_${index + 1}`;
+
+                                                        return (
+                                                            <Box key={index} sx={{mb: 2}}>
+                                                                <Typography variant="caption" sx={{
+                                                                    display: 'block',
+                                                                    mb: 0.5,
+                                                                    fontWeight: 500
+                                                                }}>
+                                                                    {fileName}
+                                                                </Typography>
+
+                                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                                    <audio
+                                                                        controls
+                                                                        preload="none"
+                                                                        style={{width: '100%', height: '35px'}}
+                                                                        onPlay={handlePlay}
+                                                                    >
+                                                                        <source src={audioUrl} type="audio/mpeg"/>
+                                                                    </audio>
+
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => downloadAudio(audioUrl, fileName)}
+                                                                        sx={{
+                                                                            bgcolor: 'primary.main',
+                                                                            color: 'white',
+                                                                            flexShrink: 0,
+                                                                            '&:hover': {bgcolor: 'primary.dark'}
+                                                                        }}
+                                                                    >
+                                                                        <DownloadIcon fontSize="small"/>
+                                                                    </IconButton>
+                                                                </Stack>
+                                                            </Box>
+                                                        );
+                                                    })
                                                 ) : (
                                                     <Typography variant="caption" color="text.secondary">
                                                         Nu s-au găsit înregistrări.

@@ -137,6 +137,9 @@ export function parseMobilePosition(xmlString: string): ParsedMobilePosition | n
     } else if (xmlString.includes("<coord>")) {
         // Fallback pentru MLP vechi (DMS)
         geometry = parseMLPCoords(xmlString);
+    } else if (xmlString.includes("&lt;coord&gt;")) {
+        // Fallback MLP cu tag-uri HTML-escaped (versiunea veche)
+        geometry = parseMLPCoords(xmlString);
     }
 
     if (!geometry) return null;

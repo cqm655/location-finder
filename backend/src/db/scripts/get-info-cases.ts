@@ -1,72 +1,97 @@
 export const getInfoCasesById = `
-    WITH CombinedCases AS (
-        SELECT
-            C.caseFolderId,
-            C.caseTypeId,
-            C.created,
-            C.creator,
-            C.phoneNumberAreaCode,
-            C.phoneNumber,
-            C.xCoordinate,
-            C.yCoordinate,
-            C.caseIndex1Name,
-            C.caseIndex2Name,
-            C.caseIndexComment,
-            B.caseFolderIndexComment,
-            C.caseId,
-            C.Street,
-            C.MunicipalityName,
-            C.Locality,
-            C.Orderer
-        FROM cse_Case_tab C WITH(NOLOCK)
-        INNER JOIN cse_CaseFolder_tab B WITH(NOLOCK) ON C.CaseFolderId = B.CaseFolderId
-    WHERE C.CaseFolderId = @caseFolderId AND C.CaseTypeId IN (102, 104, 105)
-
-    UNION ALL
-
+  WITH CombinedCases AS (
     SELECT
-        CF.caseFolderId,
-        CF.caseTypeId,
-        CF.created,
-        CF.creator,
-        CF.phoneNumberAreaCode,
-        CF.phoneNumber,
-        CF.xCoordinate,
-        CF.yCoordinate,
-        CF.caseIndex1Name,
-        CF.caseIndex2Name,
-        CF.caseIndexComment,
-        D.caseFolderIndexComment,
-        CF.caseId,
-        CF.Street,
-        CF.MunicipalityName,
-        CF.Locality,
-        CF.Orderer
-    FROM cse_CaseFinished_tab CF WITH(NOLOCK)
+      C.caseFolderId,
+      C.caseTypeId,
+      C.created,
+      C.creator,
+      C.phoneNumberAreaCode,
+      C.phoneNumber,
+      C.xCoordinate,
+      C.yCoordinate,
+      C.caseIndex1Name,
+      C.caseIndex2Name,
+      C.caseIndexComment,
+      B.caseFolderIndexComment,
+      C.caseId,
+      C.Street,
+      C.MunicipalityName,
+      C.Locality,
+      C.Orderer
+    FROM cse_Case_tab C WITH(NOLOCK)
+    INNER JOIN cse_CaseFolder_tab B WITH(NOLOCK) ON C.CaseFolderId = B.CaseFolderId
+  WHERE C.CaseFolderId = @caseFolderId AND C.CaseTypeId IN (102, 104, 105, 100)
+
+  UNION ALL
+
+  SELECT
+    CF.caseFolderId,
+    CF.caseTypeId,
+    CF.created,
+    CF.creator,
+    CF.phoneNumberAreaCode,
+    CF.phoneNumber,
+    CF.xCoordinate,
+    CF.yCoordinate,
+    CF.caseIndex1Name,
+    CF.caseIndex2Name,
+    CF.caseIndexComment,
+    D.caseFolderIndexComment,
+    CF.caseId,
+    CF.Street,
+    CF.MunicipalityName,
+    CF.Locality,
+    CF.Orderer
+  FROM cse_CaseFinished_tab CF WITH(NOLOCK)
     INNER JOIN cse_CaseFolderFinished_tab D WITH(NOLOCK) ON CF.CaseFolderId = D.CaseFolderId
-    WHERE CF.CaseFolderId = @caseFolderId AND CF.CaseTypeId IN (102, 104, 105)
-        )
-    SELECT
-        caseFolderId,
-        caseId,
-        caseTypeId,
-        CASE caseTypeId
-            WHEN 102 THEN 'Politie'
-            WHEN 104 THEN 'Pompieri'
-            WHEN 105 THEN 'Ambulanta'
-            END AS caseTypeName,
-        created,
-        CONCAT(MunicipalityName, ' - ', Locality, ' - ', Street) AS address,
-        CONCAT(RTRIM(LTRIM(PhoneNumberAreaCode)), RTRIM(LTRIM(PhoneNumber))) AS phoneNumber,
-        orderer,
-        creator,
-        xCoordinate,
-        yCoordinate,
-        caseIndex1Name,
-        caseIndex2Name,
-        caseIndexComment,
-        caseFolderIndexComment
-    FROM CombinedCases;
+  WHERE CF.CaseFolderId = @caseFolderId AND CF.CaseTypeId IN (102, 104, 105, 100)
+
+  UNION ALL
+
+  SELECT
+    CF.caseFolderId,
+    CF.caseTypeId,
+    CF.created,
+    CF.creator,
+    CF.phoneNumberAreaCode,
+    CF.phoneNumber,
+    CF.xCoordinate,
+    CF.yCoordinate,
+    CF.caseIndex1Name,
+    CF.caseIndex2Name,
+    CF.caseIndexComment,
+    D.caseFolderIndexComment,
+    CF.caseId,
+    CF.Street,
+    CF.MunicipalityName,
+    CF.Locality,
+    CF.Orderer
+  FROM cse_CaseRejected_tab CF WITH(NOLOCK)
+    INNER JOIN cse_CaseFolderRejected_tab D WITH(NOLOCK) ON CF.CaseFolderId = D.CaseFolderId
+  WHERE CF.CaseFolderId = @caseFolderId
+    )
+  SELECT
+    caseFolderId,
+    caseId,
+    caseTypeId,
+    CASE caseTypeId
+      WHEN 102 THEN 'Politie'
+      WHEN 104 THEN 'Pompieri'
+      WHEN 105 THEN 'Ambulanta'
+      ELSE 'Respins/Necunoscut' -- Mesaj pentru ID 0 sau NULL
+      END AS caseTypeName,
+    created,
+    CONCAT(MunicipalityName, ' - ', Locality, ' - ', Street) AS address,
+    CONCAT(RTRIM(LTRIM(PhoneNumberAreaCode)), RTRIM(LTRIM(PhoneNumber))) AS phoneNumber,
+    orderer,
+    creator,
+    xCoordinate,
+    yCoordinate,
+    caseIndex1Name,
+    caseIndex2Name,
+    caseIndexComment,
+    caseFolderIndexComment
+  FROM CombinedCases;
 `;
 
 export const getInfoCasesByArea = `
