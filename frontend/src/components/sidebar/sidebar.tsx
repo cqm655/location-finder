@@ -8,7 +8,6 @@ import {useStoreSetSideBardAccordionData} from "../../store/useStoreSetSideBardA
 
 export const Sidebar = () => {
 
-
     const {resp} = useGetByCaseFolderId()
     const loading = useStateCasefolderId((state) => state.isLoading)
     const isOpen = useStoreToggleSideBar((state) => state.isOpen)

@@ -71,8 +71,9 @@ export const CasefolderidInput = () => {
                         sx: {
                             px: 1.5,
                             py: 0.5,
-                            fontSize: '1.2rem',
-                            width: "170px" // Puțin mai lat pentru lizibilitate
+                            fontSize: '1.1rem',
+                            width: "170px", // Puțin mai lat pentru lizibilitate
+                            backgroundColor: "#fff",
                         }
                     }}
                 />

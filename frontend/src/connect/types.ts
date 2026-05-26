@@ -32,8 +32,8 @@ export interface ApiCaseFolderIdResponse {
     caseTypeId?: number;
     caseTypeName?: string;
     created?: Date;
-    XCoordinate?: number;
-    YCoordinate?: number;
+    xCoordinate?: number;
+    yCoordinate?: number;
     creator?: string;
     orderer?: string;
 }
@@ -76,6 +76,7 @@ export interface ApiLogsByCaseFolderIdResponse {
 
 export interface ResponseGeomByCaseFolderId {
     geometry: string;
+    MobilePosition: string;
 }
 
 // Aceasta reprezintă structura GeoJSON pe care o așteaptă store-ul tău
