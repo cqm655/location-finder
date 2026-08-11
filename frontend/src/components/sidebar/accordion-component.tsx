@@ -276,7 +276,7 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                     <AccordionItem label="Nivel 1" value={item.caseIndex1Name}/>
                                     <AccordionItem label="Nivel 2" value={item.caseIndex2Name}/>
                                     <AccordionItem label="Telefon" value={item.phoneNumber}/>
-                                    <AccordionItem label="Apelant" value={item.orderer}/>
+                                    <AccordionItem label="Apelant" value={item.orderer ?? " - -"}/>
                                     <AccordionItem label="Address" value={item.address}/>
 
 

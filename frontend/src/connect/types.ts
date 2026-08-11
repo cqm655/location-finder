@@ -9,6 +9,12 @@ interface PolygonGeometry {
     longitude: number[];
 }
 
+export interface UserCredentials {
+    username: string;
+    password: string;
+    access_token: string;
+}
+
 export interface ApiCaseFolderIdResponse {
     caller?: string;
     caseFolderId?: number;
@@ -36,6 +42,8 @@ export interface ApiCaseFolderIdResponse {
     yCoordinate?: number;
     creator?: string;
     orderer?: string;
+    username?: string;
+    password?: string;
 }
 
 

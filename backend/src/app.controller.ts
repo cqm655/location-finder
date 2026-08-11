@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AppService } from './app.service';
@@ -16,6 +17,7 @@ import { InfoByLocationResponse } from './use-case/cases-by-location/get-cases-b
 import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
 import * as path from 'path';
 import * as fs from 'node:fs';
+import { JwtAuthGuard } from './auth/jwt/jwt-auth.guard';
 
 @Controller({
   path: '',
@@ -23,36 +25,36 @@ import * as fs from 'node:fs';
 })
 export class AppController {
   constructor(private readonly appService: AppService) {}
-
+  @UseGuards(JwtAuthGuard)
   @Get('folderId/:id')
   async getInfoByCaseFolderId(@Param('id') id: string) {
     return await this.appService.getInfoByCaseFolderId(id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Post('/by-area')
   async getCasesByLocation(
     @Body() casesRequest: RequestByLocationDto,
   ): Promise<InfoByLocationResponse[]> {
     return this.appService.getCasesInformation(casesRequest);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get('/logs/:id')
   async getLogs(@Param('id') id: number): Promise<InfoByCaseFolderId[]> {
     return await this.appService.getLogsByCaseFolder(id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get('/geometry/:id')
   async getGeometryByCaseFolderId(
     @Param('id') id: number,
   ): Promise<CaseFolderMobilePosition[]> {
     return await this.appService.getGeometryByCaseFolderId(id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get('/audio/list/:id')
   async getAudioByCaseFolderId(@Param('id') id: number) {
     return await this.appService.getAudio(id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get('/audio/stream/:caseFolderId/:fileIndex')
   async streamAudio(
     @Param('caseFolderId') caseFolderId: number,
@@ -66,26 +68,23 @@ export class AppController {
       return res.status(404).send('Înregistrarea nu există.');
     }
 
-    // 2. Extragem calea indiferent dacă e obiect sau string
     const item = audioFiles[fileIndex];
     const relativePath =
       item.FileName ||
       item.FileName ||
       (typeof item === 'string' ? item : null);
-    // 3. Preluăm căile din ENV
     const rootPaths = [process.env.AUDIO_ROOT_1, process.env.AUDIO_ROOT_2];
 
     let absolutePath = '';
     let fileExists = false;
 
-    // 3. Logica de căutare "Fallback"
     for (const root of rootPaths) {
       const fullPath = path.join(root, String(relativePath));
 
       if (fs.existsSync(fullPath)) {
         absolutePath = fullPath;
         fileExists = true;
-        break; // Am găsit fișierul, nu mai căutăm în restul locațiilor
+        break;
       }
     }
 
