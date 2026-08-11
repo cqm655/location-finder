@@ -17,7 +17,7 @@ export const getInfoCasesById = `
       C.Street,
       C.MunicipalityName,
       C.Locality,
-      C.Orderer
+      IIF(C.ORDERER IS NULL,CONCAT(C.PersonName,' ', C.PersonFirstName) , C.ORDERER) AS 'orderer'
     FROM cse_Case_tab C WITH(NOLOCK)
     INNER JOIN cse_CaseFolder_tab B WITH(NOLOCK) ON C.CaseFolderId = B.CaseFolderId
   WHERE C.CaseFolderId = @caseFolderId AND C.CaseTypeId IN (102, 104, 105, 100)
@@ -41,7 +41,7 @@ export const getInfoCasesById = `
     CF.Street,
     CF.MunicipalityName,
     CF.Locality,
-    CF.Orderer
+    IIF(CF.ORDERER IS NULL,CONCAT(CF.PersonName,' ', CF.PersonFirstName) , CF.ORDERER) AS 'orderer'
   FROM cse_CaseFinished_tab CF WITH(NOLOCK)
     INNER JOIN cse_CaseFolderFinished_tab D WITH(NOLOCK) ON CF.CaseFolderId = D.CaseFolderId
   WHERE CF.CaseFolderId = @caseFolderId AND CF.CaseTypeId IN (102, 104, 105, 100)
@@ -65,7 +65,7 @@ export const getInfoCasesById = `
     CF.Street,
     CF.MunicipalityName,
     CF.Locality,
-    CF.Orderer
+    IIF(CF.ORDERER IS NULL,CONCAT(CF.PersonName,' ', CF.PersonFirstName) , CF.ORDERER) AS 'orderer'
   FROM cse_CaseRejected_tab CF WITH(NOLOCK)
     INNER JOIN cse_CaseFolderRejected_tab D WITH(NOLOCK) ON CF.CaseFolderId = D.CaseFolderId
   WHERE CF.CaseFolderId = @caseFolderId
@@ -161,7 +161,8 @@ export const getLogsByCaseFolderId = `
            cflr.LogText AS LogText
     FROM cse_CaseFolderLogRejected_tab cflr WITH(NOLOCK)
     WHERE
-        cflr.CaseFolderId = @caseFolderId`;
+        cflr.CaseFolderId = @caseFolderId
+    order by cfl.Created`;
 
 export const getLocationByCaseFolderId = ` 
   SELECT MobilePosition FROM cse_CaseFolderMobilePosition_tab WHERE CASEFOLDERID = @caseFolderId

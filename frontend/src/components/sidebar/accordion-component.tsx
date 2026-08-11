@@ -1,11 +1,13 @@
-import {useState, useRef} from "react";
+import {useCallback, useMemo, useRef, useState} from "react";
 import {
     Accordion, AccordionDetails, AccordionSummary,
-    Button, Typography, Box, Divider, Stack, Chip, Paper
+    Button, Typography, Box, Divider, Stack, Paper, IconButton
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import HistoryIcon from "@mui/icons-material/History";
+import ArticleIcon from "@mui/icons-material/Article";
+import DownloadIcon from "@mui/icons-material/Download";
 import {AccordionItem} from "./Accordion-item.tsx";
 import {useStoreAddPointOnMap} from "../../store/useStoreAddPointOnMap.ts";
 import {useStoreGeometryFromCaseFolderId} from "../../store/useStoreGeometryFromCaseFolderId.ts";
@@ -16,18 +18,75 @@ import {parseTime} from "../../utils/parse-time.ts";
 import {getSsuIconType} from "../../utils/parse-ssu-icon.ts";
 import Doc from "../../assets/doc.png";
 import {useGetLogsByCasefolderId} from "../../connect/get-logs-by-casefolderid.ts";
-import ArticleIcon from '@mui/icons-material/Article';
-import DownloadIcon from '@mui/icons-material/Download';
-import IconButton from '@mui/material/IconButton'; // Adaugă și IconButton dacă nu e importat
-
-// --- IMPORTĂ STORE-UL DE FILTRARE ---
 import {useStoreCaseTypeName} from "../../store/useStoreCaseTypeName.ts";
+import {parseAudioFileName} from "../../utils/parse-audio-name.ts";
 
-const soundPath = import.meta.env.VITE_SOUND_PATH
+const soundPath = import.meta.env.VITE_SOUND_PATH;
+
+// ---------- Tipuri ----------
+
+interface LogEntry {
+    Created: string;
+    LogText: string;
+}
+
+interface AudioFile {
+    FileName?: string;
+    OperatorName?: string;
+}
 
 interface Props {
     data: ApiCaseFolderIdResponse[] | ApiCaseFolderIdResponse;
     disableFilter?: boolean;
+}
+
+// ---------- Hook generic: fetch + cache + loading + eroare, per id numeric ----------
+
+interface CachedFetchState<T> {
+    data: Record<number, T[]>;
+    loading: Record<number, boolean>;
+    error: Record<number, string | null>;
+    load: (id: number, fetcher: () => Promise<T[]>) => Promise<void>;
+    reset: (id: number) => void;
+}
+
+function useCachedFetch<T>(): CachedFetchState<T> {
+    const [data, setData] = useState<Record<number, T[]>>({});
+    const [loading, setLoading] = useState<Record<number, boolean>>({});
+    const [error, setError] = useState<Record<number, string | null>>({});
+
+    const load = useCallback(async (id: number, fetcher: () => Promise<T[]>) => {
+        // Nu reîncărcăm dacă avem deja date cache-uite sau dacă e deja în curs
+        if (data[id] || loading[id]) return;
+
+        setLoading(prev => ({...prev, [id]: true}));
+        setError(prev => ({...prev, [id]: null}));
+
+        try {
+            const resp = await fetcher();
+            setData(prev => ({...prev, [id]: Array.isArray(resp) ? resp : []}));
+        } catch (err) {
+            console.error("Eroare la preluarea datelor:", err);
+            setError(prev => ({
+                ...prev,
+                [id]: err instanceof Error ? err.message : "Eroare necunoscută la încărcare.",
+            }));
+        } finally {
+            setLoading(prev => ({...prev, [id]: false}));
+        }
+
+    }, [data, loading]);
+
+    const reset = useCallback((id: number) => {
+        setData(prev => {
+            const next = {...prev};
+            delete next[id];
+            return next;
+        });
+        setError(prev => ({...prev, [id]: null}));
+    }, []);
+
+    return {data, loading, error, load, reset};
 }
 
 /**
@@ -35,166 +94,144 @@ interface Props {
  * Include logici pentru filtrare, preluare geometrie (AML/MLP) și loguri de activitate.
  */
 export const AccordionComponent = ({data, disableFilter = false}: Props) => {
-    // Transformă datele în array dacă vin ca obiect singular pentru a asigura consistența la mapare
-    const item = Array.isArray(data) ? data : [data];
+    // Normalizăm datele într-un array pentru consistență la mapare
+    const item = useMemo(() => (Array.isArray(data) ? data : [data]), [data]);
+
     // Hook pentru starea filtrelor de organizație (Ambulanță, Poliție, Pompieri)
     const {selectedOrgs} = useStoreCaseTypeName();
 
-    // Stări locale pentru gestionarea datelor preluate asincron pentru fiecare caz în parte
-    const [geomById, setGeomById] = useState<Record<number, GeometryWithDate[]>>({}); // Geometria per ID caz
-    const [selectedIdx, setSelectedIdx] = useState<Record<number, number | null>>({}); // Indexul chip-ului de locație selectat
+    // Stare UI locală
+    const [selectedIdx, setSelectedIdx] = useState<Record<number, number | null>>({});
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [logsById, setLogsById] = useState<Record<number, any[]>>({}); // Logurile de activitate per ID caz
-    const [loadingLogs, setLoadingLogs] = useState<Record<number, boolean>>({}); // Starea de loading pentru loguri
 
-    // Audio player
-    const [audioById, setAudioById] = useState<Record<number, any[]>>({});
-    const [loadingAudio, setLoadingAudio] = useState<Record<number, boolean>>({});
+    // Cele trei tipuri de date fetch-uite pe cerere, fiecare cu propriul cache/loading/error
+    const geom = useCachedFetch<GeometryWithDate>();
+    const logs = useCachedFetch<LogEntry>();
+    const audio = useCachedFetch<AudioFile>();
+
     const currentlyPlayingRef = useRef<HTMLAudioElement | null>(null);
 
     // Hook-uri din store-uri globale pentru interacțiunea cu harta
-    const setPointOnMap = useStoreAddPointOnMap((s) => s.setCoordinate);
-    const resetPointOnMap = useStoreAddPointOnMap((s) => s.resetCoordinates);
-    const resetFeatures = useStoreGeometryFromCaseFolderId((s) => s.resetSelectedFeature);
-    const addUniqueGeoemetries = useStoreGeometryFromCaseFolderId((state) => state.addUniqueFeature);
+    const setPointOnMap = useStoreAddPointOnMap(s => s.setCoordinate);
+    const resetPointOnMap = useStoreAddPointOnMap(s => s.resetCoordinates);
+    const resetFeatures = useStoreGeometryFromCaseFolderId(s => s.resetSelectedFeature);
+    const addUniqueGeometries = useStoreGeometryFromCaseFolderId(s => s.addUniqueFeature);
 
     // Hook-uri pentru apeluri API
     const {fetchGeom} = useGetGeomByCasefolderid();
     const {fetchLogs} = useGetLogsByCasefolderId();
 
-
     /**
-     * Player Audio
+     * Player Audio — se asigură că doar un singur element <audio> cântă simultan.
      */
-    const handlePlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    const handlePlay = useCallback((e: React.SyntheticEvent<HTMLAudioElement>) => {
         const audioElement = e.currentTarget;
-
-        // Dacă există deja ceva care cântă și nu este player-ul curent
         if (currentlyPlayingRef.current && currentlyPlayingRef.current !== audioElement) {
-            currentlyPlayingRef.current.pause(); // Oprim player-ul vechi
-            // currentlyPlayingRef.current.currentTime = 0; // Opțional: resetează la început
+            currentlyPlayingRef.current.pause();
         }
-
-        // Actualizăm referința cu player-ul nou
         currentlyPlayingRef.current = audioElement;
-    };
+    }, []);
 
-    const handleAudio = async (id: number) => {
-        if (audioById[id]) return; // Nu reîncărcăm dacă există deja
-
-        setLoadingAudio(prev => ({...prev, [id]: true}));
-        try {
-            // Presupunem că ai un hook/metodă similară cu fetchLogs
-            const resp = await fetch(`${soundPath}/audio/list/${id}`).then(res => res.json());
-            setAudioById(prev => ({...prev, [id]: resp}));
-        } catch (error) {
-            console.error("Eroare la preluarea listei audio:", error);
-        } finally {
-            setLoadingAudio(prev => ({...prev, [id]: false}));
-        }
-    };
+    const handleAudio = useCallback((id: number) => {
+        return audio.load(id, () =>
+            fetch(`${soundPath}/audio/list/${id}`).then(res => {
+                if (!res.ok) throw new Error(`Serverul audio a răspuns cu status ${res.status}`);
+                return res.json();
+            })
+        );
+    }, [audio]);
 
     /**
      * Filtrează lista de cazuri în funcție de organizațiile selectate în MapControls.
-     * Dacă nu este selectat niciun filtru, se afișează toate cazurile.
+     * Dacă niciun filtru nu e selectat, se afișează toate cazurile.
      */
+    const filteredItems = useMemo(() => {
+        if (disableFilter) return item;
 
-    const filteredItems = disableFilter ? item : item.filter(itm => {
-        const typeName = itm.caseTypeName?.toLowerCase() || "";
+        return item.filter(itm => {
+            const typeName = itm.caseTypeName?.toLowerCase() || "";
 
-        const ambulance = selectedOrgs['Ambulanță'] ?? false;
-        const police = selectedOrgs['Poliție'] ?? false;
-        const fire = selectedOrgs['Pompieri'] ?? false;
+            const ambulance = selectedOrgs["Ambulanță"] ?? false;
+            const police = selectedOrgs["Poliție"] ?? false;
+            const fire = selectedOrgs["Pompieri"] ?? false;
 
-        const noFilterSelected = !ambulance && !police && !fire;
-        if (noFilterSelected) return true;
+            const noFilterSelected = !ambulance && !police && !fire;
+            if (noFilterSelected) return true;
 
-        const matchAmbulance = ambulance && (typeName.includes('ambulan') || typeName.includes('903'));
-        const matchPolice = police && (typeName.includes('poli') || typeName.includes('902') || typeName.includes('igp'));
-        const matchFire = fire && (typeName.includes('pompier') || typeName.includes('901') || typeName.includes('dse'));
+            const matchAmbulance = ambulance && (typeName.includes("ambulan") || typeName.includes("903"));
+            const matchPolice = police && (typeName.includes("poli") || typeName.includes("902") || typeName.includes("igp"));
+            const matchFire = fire && (typeName.includes("pompier") || typeName.includes("901") || typeName.includes("dse"));
 
-        return matchAmbulance || matchPolice || matchFire;
-    });
+            return matchAmbulance || matchPolice || matchFire;
+        });
+    }, [item, disableFilter, selectedOrgs]);
 
     /**
      * Preia datele de localizare (geometria) pentru un caz specific.
      * Filtrează rezultatele pentru a păstra doar tipurile AML și MLP valide.
-     * @param id - ID-ul folderului de caz (CaseFolderId)
      */
-    const handleAML = async (id: number) => {
-        if (geomById[id]) return;
-
-        resetFeatures(); // Curăță hărțile de geometrii anterioare
+    const handleAML = useCallback((id: number) => {
+        resetFeatures();
         resetPointOnMap();
 
-        const resp = await fetchGeom(id);
-        if (!Array.isArray(resp)) return;
+        return geom.load(id, async () => {
+            const resp = await fetchGeom(id);
+            if (!Array.isArray(resp)) return [];
 
-        const geometry = resp
-            .map(item => {
-                const parsed = parseMobilePosition(item.MobilePosition || item.geometry);
-                if (!parsed) return null;
+            return resp
+                .map(g => {
+                    const parsed = parseMobilePosition(g.MobilePosition || g.geometry);
+                    if (!parsed) return null;
+                    return {
+                        geometry: parsed,
+                        created: parsed.time,
+                    };
+                })
+                .filter((g): g is GeometryWithDate => g !== null);
+        });
 
-                return {
-                    geometry: parsed, // Conține type, feature și TIME
-                    created: parsed.time, // Timpul extras direct de parser!
-                };
-            })
-            .filter((item): item is GeometryWithDate => item !== null);
+    }, [fetchGeom, geom, resetFeatures, resetPointOnMap]);
 
-        setGeomById(prev => ({...prev, [id]: geometry}));
-    };
     /**
-     * Preia logurile de activitate pentru un caz specific de la server.
-     * @param id - ID-ul folderului de caz
+     * Preia logurile de activitate pentru un caz specific.
      */
-    const handleLogs = async (id: number) => {
-        if (logsById[id]) return; // Nu reîncărcăm dacă logurile au fost deja preluate
-
-        setLoadingLogs(prev => ({...prev, [id]: true}));
-        try {
+    const handleLogs = useCallback((id: number) => {
+        return logs.load(id, async () => {
             const resp = await fetchLogs(id);
-            const logsArray = Array.isArray(resp) ? resp : [];
-            setLogsById(prev => ({...prev, [id]: logsArray}));
-        } catch (error) {
-            console.error("Eroare la preluarea logurilor:", error);
-        } finally {
-            setLoadingLogs(prev => ({...prev, [id]: false}));
-        }
-    }
+            return Array.isArray(resp) ? resp : [];
+        });
 
-    const downloadAudio = async (url: string, fileName: string) => {
+    }, [fetchLogs, logs]);
+
+    const downloadAudio = useCallback(async (url: string, fileName: string) => {
         try {
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`Descărcare eșuată (status ${response.status})`);
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
 
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             link.href = blobUrl;
-            link.download = fileName.endsWith('.mp3') ? fileName : `${fileName}.mp3`;
+            link.download = fileName.endsWith(".mp3") ? fileName : `${fileName}.mp3`;
 
             document.body.appendChild(link);
             link.click();
-
-            // Curățăm memoria
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.error("Eroare la descărcarea fișierului:", error);
         }
-    };
+    }, []);
 
     return (
-        <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, p: 1}}>
-            {/* Iterăm prin lista filtrată pentru a genera acordeoanele */}
+        <Box sx={{display: "flex", flexDirection: "column", gap: 1, p: 1}}>
             {filteredItems.length > 0 ? (
-                filteredItems.map((item) => {
+                filteredItems.map(item => {
                     const caseFolderId = item.caseFolderId ?? (item as any).CaseFolderId;
                     const caseId = item.caseId;
+                    if (caseFolderId === undefined) return null;
 
                     const uniqueRowKey = `${caseFolderId}-${caseId}`;
-
-                    if (caseFolderId === undefined) return null;
 
                     return (
                         <Accordion
@@ -202,37 +239,39 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                             expanded={expandedId === uniqueRowKey}
                             onChange={(_, expanded) => {
                                 setExpandedId(expanded ? uniqueRowKey : null);
-                                // Când se deschide un acordeon, încercăm să aducem automat localizarea
                                 if (expanded) handleAML(caseFolderId);
                             }}
                             sx={{
-                                borderRadius: '8px !important',
-                                '&:before': {display: 'none'},
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                borderRadius: "8px !important",
+                                "&:before": {display: "none"},
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                             }}
                         >
-                            {/* Antetul Acordeonului: ID, Iconiță Tip și Buton Expand */}
+                            {/* Antet: ID caz, iconiță tip, buton expand */}
                             <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                                 <Stack direction="row" alignItems="center" spacing={2}>
-                                    <img src={Doc} style={{width: 24, height: 24}} alt="doc"/>
-                                    <Typography sx={{fontWeight: 'bold', minWidth: '80px'}}>
+                                    <img src={Doc} style={{width: 24, height: 24}} alt="Document caz"/>
+                                    <Typography sx={{fontWeight: "bold", minWidth: "80px"}}>
                                         #{caseFolderId}
                                     </Typography>
                                     <Divider orientation="vertical" flexItem/>
-                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                        <img src={getSsuIconType(item.caseTypeId ?? 0)} style={{width: 28, height: 28}}
-                                             alt="type"/>
+                                    <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
+                                        <img
+                                            src={getSsuIconType(item.caseTypeId ?? 0)}
+                                            style={{width: "auto", height: 28}}
+                                            alt={`Tip caz: ${item.caseTypeName ?? "necunoscut"}`}
+                                        />
                                     </Box>
                                 </Stack>
                             </AccordionSummary>
 
-                            {/* Detaliile Acordeonului: Informații dosar, Loguri și Locații */}
                             <AccordionDetails sx={{pt: 0, px: 3, pb: 3}}>
                                 <Divider sx={{mb: 2}}/>
 
                                 {/* Grid de informații de bază */}
-                                <Box sx={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 3}}>
+                                <Box sx={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, mb: 3}}>
                                     <AccordionItem label="Creator" value={item.creator}/>
+                                    <AccordionItem label="Timp Creare" value={parseTime(item.created)}/>
                                     <AccordionItem label="Tip caz" value={item.caseTypeName}/>
                                     <AccordionItem label="Nivel 1" value={item.caseIndex1Name}/>
                                     <AccordionItem label="Nivel 2" value={item.caseIndex2Name}/>
@@ -240,78 +279,126 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                     <AccordionItem label="Apelant" value={item.orderer}/>
                                     <AccordionItem label="Address" value={item.address}/>
 
-                                    {/* Secțiune Loguri: Permite încărcarea și vizualizarea logurilor */}
-                                    <Paper variant="outlined" sx={{p: 1, bgcolor: '#f8f9fa', gridColumn: 'span 2'}}>
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center"
-                                               sx={{mb: 1}}>
-                                            <Typography variant="subtitle2"
-                                                        sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                                <ArticleIcon fontSize="small" color="action"/> Loguri Activitate
-                                            </Typography>
-                                            {!logsById[caseFolderId] && (
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    onClick={() => handleLogs(caseFolderId)}
-                                                    disabled={loadingLogs[caseFolderId]}
-                                                >
-                                                    {loadingLogs[caseFolderId] ? "Se încarcă..." : "Vezi Loguri"}
-                                                </Button>
-                                            )}
-                                        </Stack>
 
-                                        {/* Listare loguri dacă sunt încărcate */}
-                                        {logsById[caseFolderId] && (
-                                            <Box sx={{
-                                                mt: 1,
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 1,
-                                                maxHeight: 300,
-                                                overflowY: 'auto'
-                                            }}>
-                                                {logsById[caseFolderId].length > 0 ? (
-                                                    logsById[caseFolderId].map((log, idx) => (
-                                                        <Box key={idx} sx={{
-                                                            pl: 1,
-                                                            bgcolor: 'white',
-                                                            borderRadius: 1,
-                                                            borderLeft: '3px solid #0288d1',
-                                                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                                                        }}>
-                                                            <Typography variant="caption" color="info"
-                                                                        display="block">
-                                                                <strong> {parseTime(log.Created)}</strong>
-                                                            </Typography>
-                                                            <Typography variant="h6" sx={{fontSize: '0.7rem'}}>
-                                                                {log.LogText}
-                                                            </Typography>
-                                                        </Box>
-                                                    ))
-                                                ) : (
-                                                    <Typography variant="caption" color="text.secondary">Nu există
-                                                        loguri.</Typography>
-                                                )}
-                                            </Box>
-                                        )}
-                                    </Paper>
-
-                                    <Box sx={{gridColumn: 'span 2'}}>
+                                    <Box sx={{gridColumn: "span 2"}}>
                                         <AccordionItem label="Comentarii caz"
                                                        value={item.caseIndexComment || "Fără comentarii"}/>
                                     </Box>
-                                    <Box sx={{gridColumn: 'span 2'}}>
+                                    <Box sx={{gridColumn: "span 2"}}>
                                         <AccordionItem label="Comentarii dosar"
                                                        value={item.caseFolderIndexComment || "Fără comentarii"}/>
                                     </Box>
                                 </Box>
 
-                                {/* Acțiuni Harta: Coordonate Operator și Istoric Mobile (AML) */}
+                                {/* Loguri de activitate */}
                                 <Stack direction="column" spacing={2}>
-                                    {/* Setează punctul definit manual de operator */}
-                                    <Paper variant="outlined" sx={{p: 2, bgcolor: '#fffaf0'}}>
+                                    <Paper variant="outlined" sx={{p: 2, bgcolor: "#f8f9fa"}}>
+                                        <Typography variant="subtitle2"
+                                                    sx={{display: "flex", alignItems: "center", gap: 1}}>
+                                            <ArticleIcon fontSize="small" color="action"/> Loguri Activitate
+                                        </Typography>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center"
+                                               sx={{mb: 1}}>
+
+                                            {!logs.data[caseFolderId] && (
+
+                                                <Button
+                                                    fullWidth={true}
+                                                    variant="contained"
+                                                    color={"inherit"}
+                                                    onClick={() => handleLogs(caseFolderId)}
+                                                    disabled={logs.loading[caseFolderId]}
+                                                >
+                                                    {logs.loading[caseFolderId] ? "Se încarcă..." : "Vezi Loguri"}
+                                                </Button>
+
+                                            )}
+                                        </Stack>
+
+                                        {logs.error[caseFolderId] && (
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <Typography variant="caption" color="error">
+                                                    {logs.error[caseFolderId]}
+                                                </Typography>
+                                                <Button size="small" onClick={() => handleLogs(caseFolderId)}>
+                                                    Reîncearcă
+                                                </Button>
+                                            </Stack>
+                                        )}
+
+                                        {logs.data[caseFolderId] && (
+                                            <Box
+                                                sx={{
+                                                    mt: 1,
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: 0.5,
+                                                    maxHeight: 250,
+                                                    overflowY: "auto",
+                                                    bgcolor: "#1e1e1e", // fundal închis stil consolă/database sau '#f8f9fa' dacă preferi deschis
+                                                    p: 1,
+                                                    borderRadius: 1,
+                                                    fontFamily: "monospace",
+                                                }}
+                                            >
+                                                {logs.data[caseFolderId].length > 0 ? (
+                                                    logs.data[caseFolderId].map((log, idx) => (
+                                                        <Box
+                                                            key={`${caseFolderId}-log-${idx}`}
+                                                            sx={{
+                                                                display: "flex",
+                                                                alignItems: "baseline",
+                                                                gap: 1.5,
+                                                                py: 0.25,
+                                                                px: 0.5,
+                                                                borderBottom: "1px solid #333",
+                                                                "&:last-child": {borderBottom: "none"},
+                                                                "&:hover": {bgcolor: "#2a2a2a"},
+                                                            }}
+                                                        >
+                                                            {/* Timestamp-ul ca în DB */}
+                                                            <Typography
+                                                                component="span"
+                                                                sx={{
+                                                                    fontFamily: "monospace",
+                                                                    fontSize: "0.72rem",
+                                                                    color: "#4fc3f7", // albastru deschis pentru timp
+                                                                    whiteSpace: "nowrap",
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            >
+                                                                {parseTime(log.Created)}
+                                                            </Typography>
+
+                                                            {/* Textul logului pe același rând */}
+                                                            <Typography
+                                                                component="span"
+                                                                sx={{
+                                                                    fontFamily: "monospace",
+                                                                    fontSize: "0.75rem",
+                                                                    color: "#fff",
+                                                                    wordBreak: "break-word",
+                                                                }}
+                                                            >
+                                                                {log.LogText}
+                                                            </Typography>
+                                                        </Box>
+                                                    ))
+                                                ) : (
+                                                    <Typography variant="caption"
+                                                                sx={{color: "#aaa", fontFamily: "monospace"}}>
+                                                        Nu există loguri.
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        )}
+                                    </Paper>
+                                </Stack>
+                                <Stack direction="column" spacing={2} sx={{mt: "16px"}}>
+                                    {/* Localizare Operator */}
+                                    <Paper variant="outlined" sx={{p: 2, bgcolor: "#fffaf0"}}>
                                         <Typography variant="subtitle2" gutterBottom
-                                                    sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                                    sx={{display: "flex", alignItems: "center", gap: 1}}>
                                             <LocationOnIcon fontSize="small" color="warning"/> Localizare Operator
                                         </Typography>
                                         <Button
@@ -319,61 +406,93 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                             variant="contained"
                                             color="warning"
                                             disabled={!item.xCoordinate || !item.yCoordinate}
-                                            onClick={() => item.xCoordinate && item.yCoordinate && setPointOnMap({
-                                                XCoordinate: item.xCoordinate,
-                                                YCoordinate: item.yCoordinate
-                                            })}
-                                            sx={{textTransform: 'none', borderRadius: 2}}
+                                            onClick={() =>
+                                                item.xCoordinate &&
+                                                item.yCoordinate &&
+                                                setPointOnMap({
+                                                    XCoordinate: item.xCoordinate,
+                                                    YCoordinate: item.yCoordinate,
+                                                })
+                                            }
+                                            sx={{textTransform: "none", borderRadius: 2}}
                                         >
                                             Setați coordonatele pe hartă
                                         </Button>
                                     </Paper>
-                                    {/* Secțiune Înregistrări Audio */}
-                                    <Paper variant="outlined"
-                                           sx={{
-                                               p: 2,
-                                               bgcolor: '#f0f4f8',
-                                               mt: 2,
-                                               height: !audioById[caseFolderId] ? "50px" : "100%",
-                                               maxHeight: "300px",
-                                               overflow: audioById[caseFolderId] ? "scroll" : "hidden"
-                                           }}>
+
+                                    {/* Înregistrări Audio */}
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: 2,
+                                            bgcolor: "#f0f4f8",
+                                            mt: 2,
+                                            minHeight: "50px",
+                                            maxHeight: "300px",
+                                            overflow: audio.data[caseFolderId] ? "auto" : "hidden",
+                                            transition: "min-height 0.2s ease",
+                                        }}
+                                    >
                                         <Typography variant="subtitle2" gutterBottom
-                                                    sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                                    sx={{display: "flex", alignItems: "center", gap: 1}}>
                                             <HistoryIcon fontSize="small" color="secondary"/> Înregistrări Apel
                                         </Typography>
 
-                                        {!audioById[caseFolderId] ? (
+                                        {audio.error[caseFolderId] && (
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 1}}>
+                                                <Typography variant="caption" color="error">
+                                                    {audio.error[caseFolderId]}
+                                                </Typography>
+                                                <Button size="small" onClick={() => handleAudio(caseFolderId)}>
+                                                    Reîncearcă
+                                                </Button>
+                                            </Stack>
+                                        )}
+
+                                        {!audio.data[caseFolderId] ? (
                                             <Button
-                                                size="small"
-                                                variant="outlined"
+                                                fullWidth={true}
+                                                variant="contained"
+                                                color={"secondary"}
                                                 onClick={() => handleAudio(caseFolderId)}
-                                                disabled={loadingAudio[caseFolderId]}
+                                                disabled={audio.loading[caseFolderId]}
                                             >
-                                                {loadingAudio[caseFolderId] ? "Se încarcă..." : "Încarcă Înregistrări"}
+                                                {audio.loading[caseFolderId] ? "Se încarcă..." : "Încarcă Înregistrări"}
                                             </Button>
                                         ) : (
                                             <Stack spacing={1}>
-                                                {audioById[caseFolderId].length > 0 ? (
-                                                    audioById[caseFolderId].map((file, index) => {
+                                                {audio.data[caseFolderId].length > 0 ? (
+                                                    audio.data[caseFolderId].map((file, index) => {
                                                         const audioUrl = `${soundPath}/audio/stream/${caseFolderId}/${index}`;
-                                                        const fileName = file.FileName || file.OperatorName || `Inregistrare_${caseFolderId}_${index + 1}`;
+                                                        const fileName =
+                                                            file.FileName || file.OperatorName || `Inregistrare_${caseFolderId}_${index + 1}`;
 
                                                         return (
-                                                            <Box key={index} sx={{mb: 2}}>
+                                                            <Box key={`${caseFolderId}-audio-${index}`} sx={{mb: 2}}>
                                                                 <Typography variant="caption" sx={{
-                                                                    display: 'block',
+                                                                    display: "block",
                                                                     mb: 0.5,
-                                                                    fontWeight: 500
+                                                                    fontWeight: 450
                                                                 }}>
-                                                                    {fileName}
+                                                                    {(() => {
+                                                                        const parsed = parseAudioFileName(fileName || '');
+                                                                        return parsed
+                                                                            ? `${parsed.date} ${parsed.time} — ${parsed.operator} (${parsed.workstation})`
+                                                                            : fileName;
+                                                                    })()}
                                                                 </Typography>
 
-                                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                                <Stack direction="row" alignItems="center" spacing={1}
+                                                                       sx={{width: "340px"}}>
                                                                     <audio
                                                                         controls
                                                                         preload="none"
-                                                                        style={{width: '100%', height: '35px'}}
+                                                                        style={{
+                                                                            width: "100%",
+                                                                            minWidth: "100%", // Forțează lățimea minimă
+                                                                            height: "35px",
+                                                                            flexGrow: 1,
+                                                                        }}
                                                                         onPlay={handlePlay}
                                                                     >
                                                                         <source src={audioUrl} type="audio/mpeg"/>
@@ -381,12 +500,13 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
 
                                                                     <IconButton
                                                                         size="small"
+                                                                        aria-label={`Descarcă înregistrarea ${fileName}`}
                                                                         onClick={() => downloadAudio(audioUrl, fileName)}
                                                                         sx={{
-                                                                            bgcolor: 'primary.main',
-                                                                            color: 'white',
+                                                                            bgcolor: "primary.main",
+                                                                            color: "white",
                                                                             flexShrink: 0,
-                                                                            '&:hover': {bgcolor: 'primary.dark'}
+                                                                            "&:hover": {bgcolor: "primary.dark"},
                                                                         }}
                                                                     >
                                                                         <DownloadIcon fontSize="small"/>
@@ -402,56 +522,84 @@ export const AccordionComponent = ({data, disableFilter = false}: Props) => {
                                                 )}
                                             </Stack>
                                         )}
-
-
                                     </Paper>
-                                    {/* Chip-uri pentru selecția locațiilor automate (AML/MLP) */}
-                                    <Paper variant="outlined" sx={{p: 2, bgcolor: '#f5faff'}}>
-                                        <Typography variant="subtitle2" gutterBottom
-                                                    sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                            <HistoryIcon fontSize="small" color="primary"/> Istoric Locații (AML/MLP)
-                                        </Typography>
 
-                                        {geomById[caseFolderId]?.length > 0 ? (
-                                            <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1}}>
-                                                {geomById[caseFolderId].map((g, n) => (
-                                                    <Chip
-                                                        key={n}
-                                                        label={`${g.geometry.type} | ${parseTime(g.created)}`}
-                                                        clickable
-                                                        color={selectedIdx[caseFolderId] === n ? "primary" : "default"}
+                                    {/* Istoric Locații AML/MLP */}
+                                    <Paper variant="outlined" sx={{p: 2, bgcolor: "#f5faff"}}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="subtitle2" gutterBottom
+                                                        sx={{display: "flex", alignItems: "center", gap: 1}}>
+                                                <HistoryIcon fontSize="small" color="primary"/> Istoric Locații
+                                                (AML/MLP)
+                                            </Typography>
+                                        </Stack>
+
+                                        {geom.error[caseFolderId] && (
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 1}}>
+                                                <Typography variant="caption" color="error">
+                                                    {geom.error[caseFolderId]}
+                                                </Typography>
+                                                <Button size="small" onClick={() => handleAML(caseFolderId)}>
+                                                    Reîncearcă
+                                                </Button>
+                                            </Stack>
+                                        )}
+
+                                        {geom.loading[caseFolderId] && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Se încarcă locațiile...
+                                            </Typography>
+                                        )}
+
+                                        {geom.data[caseFolderId]?.length > 0 ? (
+                                            <Box sx={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: 1,
+                                                justifyContent: "center"
+                                            }}>
+                                                {geom.data[caseFolderId].map((g, n) => (
+                                                    <Button
+                                                        key={`${caseFolderId}-geom-${n}`}
+                                                        fullWidth
+                                                        variant={selectedIdx[caseFolderId] === n ? "contained" : "outlined"}
+                                                        color={selectedIdx[caseFolderId] === n ? "primary" : "info"}
                                                         onClick={() => {
-                                                            addUniqueGeoemetries([{
+                                                            addUniqueGeometries([{
                                                                 features: g.geometry.feature,
                                                                 type: g.geometry.type
                                                             }]);
                                                             setSelectedIdx(prev => ({...prev, [caseFolderId]: n}));
                                                         }}
-                                                        variant={selectedIdx[caseFolderId] === n ? "filled" : "outlined"}
-                                                    />
+                                                        sx={{
+                                                            justifyContent: "flex-center", // Aliniază textul la stânga dacă e fullWidth
+                                                            textTransform: "none",        // Păstrează textul exact așa cum e (fără UPPERCASE)
+                                                            mb: 1                         // Spațiere între butoane când sunt unul sub altul
+                                                        }}
+                                                    >
+                                                        {`${g.geometry.type} | ${parseTime(g.created)}`}
+                                                    </Button>
                                                 ))}
                                             </Box>
                                         ) : (
-                                            <Typography variant="caption" color="text.secondary">
-                                                Nu s-au găsit date de localizare automată.
-                                            </Typography>
+                                            !geom.loading[caseFolderId] &&
+                                            !geom.error[caseFolderId] && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Nu s-au găsit date de localizare automată.
+                                                </Typography>
+                                            )
                                         )}
                                     </Paper>
-
                                 </Stack>
                             </AccordionDetails>
                         </Accordion>
                     );
                 })
             ) : (
-                /* 1. Acest mesaj apare corect DOAR când filteredItems este gol */
-                <Paper sx={{p: 3, textAlign: 'center', bgcolor: '#fdfdfd'}}>
-                    <Typography color="text.secondary">
-                        Niciun rezultat.
-                    </Typography>
+                <Paper sx={{p: 3, textAlign: "center", bgcolor: "#fdfdfd"}}>
+                    <Typography color="text.secondary">Niciun rezultat.</Typography>
                 </Paper>
             )}
-
         </Box>
     );
 };

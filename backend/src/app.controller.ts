@@ -17,12 +17,6 @@ import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
 import * as path from 'path';
 import * as fs from 'node:fs';
 
-interface AudioRecord {
-  FilePath: string;
-  OperatorName?: string;
-  // adaugă și alte coloane dacă ai (ex: CreatedDate)
-}
-
 @Controller({
   path: '',
   version: '1',
