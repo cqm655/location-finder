@@ -8,7 +8,6 @@ export const useAuth = () => {
 
     const fetchUser = async (user: any) => {
         setIsloading(true);
-        console.log(user);
         try {
             const response = await apiRequest<UserCredentials>(`/auth/login`, 'POST', user);
             sessionStorage.setItem("access_token", response.access_token);

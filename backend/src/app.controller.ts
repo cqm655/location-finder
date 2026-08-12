@@ -73,7 +73,13 @@ export class AppController {
       item.FileName ||
       item.FileName ||
       (typeof item === 'string' ? item : null);
-    const rootPaths = [process.env.AUDIO_ROOT_1, process.env.AUDIO_ROOT_2];
+    const rootPaths = [
+      process.env.AUDIO_ROOT_1,
+      process.env.AUDIO_ROOT_2,
+      process.env.AUDIO_ROOT_3,
+      process.env.AUDIO_ROOT_4,
+      process.env.AUDIO_ROOT_5,
+    ];
 
     let absolutePath = '';
     let fileExists = false;

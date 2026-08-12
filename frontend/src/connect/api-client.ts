@@ -39,11 +39,12 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
     })
 
-export const apiRequest = async <T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE", data?: ApiCaseFolderIdResponse): Promise<T> => {
+export const apiRequest = async <T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE", data?: ApiCaseFolderIdResponse, responseType?: 'json' | 'blob' | 'arraybuffer'): Promise<T> => {
     const response: AxiosResponse<T> = await apiClient({
         method,
         url,
-        data
+        data,
+        responseType
     });
 
     return response.data;
