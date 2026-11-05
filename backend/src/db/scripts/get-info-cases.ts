@@ -78,6 +78,7 @@ export const getInfoCasesById = `
       WHEN 102 THEN 'Politie'
       WHEN 104 THEN 'Pompieri'
       WHEN 105 THEN 'Ambulanta'
+      WHEN 100 THEN '112'
       ELSE 'Respins/Necunoscut' -- Mesaj pentru ID 0 sau NULL
       END AS caseTypeName,
     created,
@@ -148,14 +149,14 @@ export const getLogsByCaseFolderId = `
             cfl.LogText AS LogText
     FROM cse_CaseFolderLog_tab cfl WITH (NOLOCK)
     WHERE cfl.CaseFolderId = @caseFolderId
-    UNION
+    UNION ALL
     SELECT cflf.Created AS Created,
            cflf.Creator AS Creator,
            cflf.LogText AS LogText
     FROM cse_CaseFolderLogFinished_tab cflf WITH(NOLOCK)
     WHERE
         cflf.CaseFolderId = @caseFolderId
-    UNION
+    UNION ALL
     SELECT cflr.Created AS Created,
            cflr.Creator AS Creator,
            cflr.LogText AS LogText
@@ -173,7 +174,7 @@ export const getLocationByCaseFolderId = `
 `;
 
 export const getAudioPath = `
-        select FileName, 
+      select FileName, 
                CaseFolderId
       from mfm_OperatorSoundFiles_tab with(nolock)
       where CaseFolderId = @caseFolderId

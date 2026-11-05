@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -18,6 +19,7 @@ import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
 import * as path from 'path';
 import * as fs from 'node:fs';
 import { JwtAuthGuard } from './auth/jwt/jwt-auth.guard';
+import { LocationItem } from './use-case/seq/seq-mlp.service';
 
 @Controller({
   path: '',
@@ -54,6 +56,22 @@ export class AppController {
   async getAudioByCaseFolderId(@Param('id') id: number) {
     return await this.appService.getAudio(id);
   }
+  // @UseGuards(JwtAuthGuard)
+  @Get('locations')
+  async getLocationsByPhone(
+    @Query('phone') phone: string,
+    @Query('caseFolderId') caseFolderId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ): Promise<LocationItem[]> {
+    return await this.appService.getLocationsByPhone(
+      phone,
+      caseFolderId,
+      from,
+      to,
+    );
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('/audio/stream/:caseFolderId/:fileIndex')
   async streamAudio(

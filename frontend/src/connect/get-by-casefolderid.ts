@@ -11,15 +11,15 @@ export const useGetByCaseFolderId = () => {
     const [resp, setResp] = useState<ApiCaseFolderIdResponse | undefined>(undefined);
 
     useEffect(() => {
-        // 1. Verificăm dacă avem un ID valid înainte de a face request-ul
+
         if (!casefolderId) {
-            setResp(undefined); // Resetăm răspunsul anterior dacă ID-ul dispare
+            setResp(undefined);
             return;
         }
 
         const getByCaseFolderId = async () => {
             setLoading(true);
-            setError(null); // Resetăm eroarea la fiecare request nou
+            setError(null);
 
             try {
                 const response = await apiRequest<ApiCaseFolderIdResponse>(

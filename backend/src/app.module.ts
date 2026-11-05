@@ -5,6 +5,7 @@ import { UseCaseModule } from './use-case/use-case.module';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { SeqMlpService } from './use-case/seq/seq-mlp.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService],
+  providers: [AppService, SeqMlpService],
 })
 export class AppModule {}

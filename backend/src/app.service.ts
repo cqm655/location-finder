@@ -11,6 +11,7 @@ import { GetGeometryByCaseFolderId } from './use-case/get-geometry-by-folder-id/
 import { GetCasesByCaseFolderId } from './use-case/cases-by-casefolderid/get-cases-by-casefolderid.use-case';
 import { CaseFolderMobilePosition } from './dto/response-mobileposition.dto';
 import { GetAudio } from './use-case/audio/get-audio';
+import { LocationItem, SeqMlpService } from './use-case/seq/seq-mlp.service';
 
 @Injectable()
 export class AppService {
@@ -21,6 +22,7 @@ export class AppService {
     private readonly getGeomByCaseFolderId: GetGeometryByCaseFolderId,
     private readonly getCasesByCaseFolderId: GetCasesByCaseFolderId,
     private readonly audio: GetAudio,
+    private readonly seqMlp: SeqMlpService,
   ) {}
 
   public async getInfoByCaseFolderId(
@@ -60,4 +62,12 @@ export class AppService {
   //     caseFolderId,
   //   );
   // }
+  public async getLocationsByPhone(
+    phone: string,
+    caseFolderId: string,
+    from?: string,
+    to?: string,
+  ): Promise<LocationItem[]> {
+    return await this.seqMlp.getLocations(phone, caseFolderId, from, to);
+  }
 }

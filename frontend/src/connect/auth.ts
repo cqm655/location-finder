@@ -13,7 +13,7 @@ export const useAuth = () => {
             sessionStorage.setItem("access_token", response.access_token);
         } catch (error) {
             setIsError(error as Error);
-            console.log(error);
+            console.log(error?.message);
         } finally {
             setIsloading(false);
 

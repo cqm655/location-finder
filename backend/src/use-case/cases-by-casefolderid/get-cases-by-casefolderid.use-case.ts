@@ -37,7 +37,6 @@ export class GetCasesByCaseFolderId {
       for (const result of results) {
         infoCaseByCaseFolderId.push(result);
       }
-
       return infoCaseByCaseFolderId;
     } catch (error) {
       console.log(error.message);

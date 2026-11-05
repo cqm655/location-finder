@@ -101,3 +101,27 @@ export interface GeometryWithDate {
     created: Date | string;
 }
 
+export type LatLon = { lon: number; lat: number };
+
+export type LocationItem = {
+    kind: "MLP" | "AML";
+    phone: string;
+    timeUtc: string;
+    center: LatLon;
+    eventIds: string[];
+    cellId?: string;
+    polygon?: LatLon[];
+    accuracyM?: number;
+    confidence?: number;
+    method?: string;
+    imei?: string;
+    imsi?: string;
+    mcc?: number;
+    mnc?: number;
+};
+
+export type SeqSearchParams = {
+    phone: string;
+    from?: string;
+    to?: string;
+};
