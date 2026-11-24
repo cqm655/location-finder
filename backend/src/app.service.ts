@@ -64,10 +64,10 @@ export class AppService {
   // }
   public async getLocationsByPhone(
     phone: string,
-    caseFolderId: string,
+    caseFolderId?: string,
     from?: string,
     to?: string,
-  ): Promise<LocationItem[]> {
+  ) {
     return await this.seqMlp.getLocations(phone, caseFolderId, from, to);
   }
 }

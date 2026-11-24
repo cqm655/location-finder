@@ -14,6 +14,8 @@ interface Props {
 
 const parseTimeForLocationHistory = (value: Date | string) => {
     const date = new Date(value);
+    if (isNaN(date.getTime())) return "-";
+
     return date.toLocaleString("ro-RO", {
         day: "2-digit",
         month: "long",
@@ -21,9 +23,9 @@ const parseTimeForLocationHistory = (value: Date | string) => {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        timeZone: "UTC",
+        timeZone: "Europe/Chisinau",
     });
-}
+};
 
 
 export const LocationHistoryPanel = ({caseFolderId, expanded}: Props) => {

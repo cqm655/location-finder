@@ -118,6 +118,7 @@ export type LocationItem = {
     imsi?: string;
     mcc?: number;
     mnc?: number;
+    source?: "caseFolderId" | "phone";
 };
 
 export type SeqSearchParams = {

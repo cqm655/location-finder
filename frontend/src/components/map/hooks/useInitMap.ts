@@ -19,6 +19,7 @@ export const useInitMap = ({map, mapContainer}: Props) => {
             style: maptilersdk.MapStyle.OPENSTREETMAP,
             center: [28.907089, 47.00367],
             zoom: 8,
+            language: maptilersdk.Language.ROMANIAN
         });
 
         map.current.on("load", () => {

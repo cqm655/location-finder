@@ -17,6 +17,7 @@ export interface LocationItem {
   timeUtc: string; // ISO 8601, UTC, rotunjit la secundă
   center: LatLon; // AML: punctul; MLP: centrul poligonului
   eventIds: string[]; // evenimentele Seq din care provine poziția
+  source?: 'caseFolderId' | 'phone'; // din ce căutare vine rezultatul
   // doar MLP
   cellId?: string;
   polygon?: LatLon[];
@@ -30,7 +31,7 @@ export interface LocationItem {
   mnc?: number;
 }
 
-type Draft = Omit<LocationItem, 'eventIds'>;
+type Draft = Omit<LocationItem, 'eventIds' | 'source'>;
 
 interface SeqEvent {
   Id: string;
@@ -55,17 +56,49 @@ export class SeqMlpService {
     from?: string,
     to?: string,
   ): Promise<LocationItem[]> {
-    const digits = phone?.replace(/^\+/, '');
-    if (!/^\d{6,20}$/.test(digits)) {
-      throw new BadRequestException('Număr de telefon invalid');
+    // doar cifre, fără zerourile de la început (curățare, nu validare)
+    const digits = (phone ?? '').replace(/\D/g, '').replace(/^0+/, '');
+
+    const fromIso = this.safeDate(from, new Date(Date.now() - 24 * 3600_000));
+    const toIso = this.safeDate(to, new Date());
+
+    // 1) după dosar
+    const folder = (caseFolderId ?? '').trim();
+    if (/^\d{1,12}$/.test(folder)) {
+      const events = await this.fetchAll(
+        `payload like '%${folder}%'`,
+        fromIso,
+        toIso,
+      );
+      const found = this.extract(events, 'caseFolderId');
+      if (found.length > 0) return found;
     }
 
-    const events = await this.fetchAll(
-      `payload like '%${caseFolderId}%' or phone_number like '%${digits}%'`,
-      from ?? new Date(Date.now() - 24 * 3600_000).toISOString(),
-      to ?? new Date().toISOString(),
-    );
+    // 2) dacă dosarul nu dă poziții, după telefon
+    if (!digits) return [];
 
+    const events = await this.fetchAll(
+      `phone_number like '%${digits}%'`,
+      fromIso,
+      toIso,
+    );
+    return this.extract(events, 'phone');
+  }
+
+  // dată validă -> "2026-11-11T09:38:55Z"; altfel valoarea implicită
+  private safeDate(v: string | undefined, fallback: Date): string {
+    const d = v ? new Date(v) : fallback;
+    return (Number.isNaN(d.getTime()) ? fallback : d)
+      .toISOString()
+      .replace(/\.\d{3}Z$/, 'Z');
+  }
+
+  // ---------- extragere poziții din evenimente ----------
+
+  private extract(
+    events: SeqEvent[],
+    source: 'caseFolderId' | 'phone',
+  ): LocationItem[] {
     // aceeași poziție apare în 2-4 evenimente: le unim după tip + număr + secundă
     const merged = new Map<string, LocationItem>();
     const add = (d: Draft | null, eventId: string) => {
@@ -73,7 +106,7 @@ export class SeqMlpService {
       const key = `${d.kind}|${d.phone}|${d.timeUtc}`;
       const prev = merged.get(key);
       if (!prev) {
-        merged.set(key, { ...d, eventIds: [eventId] });
+        merged.set(key, { ...d, source, eventIds: [eventId] });
         return;
       }
       for (const [k, v] of Object.entries(d)) {
@@ -104,7 +137,7 @@ export class SeqMlpService {
 
       // AML din obiectul `case`
       if (kase?.caseType === 'Aml') {
-        add(this.fromAmlCase(kase, evPhone, ev.Timestamp), ev.Id); // Am adăugat ev.Timestamp
+        add(this.fromAmlCase(kase, evPhone, ev.Timestamp), ev.Id);
       }
 
       // AML din mesajul brut: payload = "A\"ML=1;..." sau { message: "A\"ML=1;..." }
@@ -126,19 +159,20 @@ export class SeqMlpService {
     from: string,
     to: string,
   ): Promise<SeqEvent[]> {
+    // intervalul intră în filtru; parantezele sunt necesare dacă `filter` conține `or`
+    const fullFilter =
+      `(${filter}) and ` +
+      `@Timestamp >= DateTime('${from}') and ` +
+      `@Timestamp < DateTime('${to}')`;
+
     const all: SeqEvent[] = [];
     let afterId: string | undefined;
 
-    for (let page = 0; page < 50; page++) {
-      const params = new URLSearchParams({
-        filter,
-        fromDateUtc: from,
-        toDateUtc: to,
-        count: '1000',
-      });
+    for (let page = 0; page < 100; page++) {
+      const params = new URLSearchParams({ filter: fullFilter, count: '1000' });
       if (afterId) params.set('afterId', afterId);
 
-      const res = await fetch(`${this.seqUrl}/api/events?${params}`, {
+      const res = await fetch(`${this.seqUrl}/api/events/?${params}`, {
         headers: { 'X-Seq-ApiKey': this.seqKey },
       });
       if (!res.ok)
@@ -146,12 +180,22 @@ export class SeqMlpService {
           `Seq a răspuns cu ${res.status}`,
         );
 
-      const batch: SeqEvent[] = await res.json();
-      if (batch.length === 0) break;
-      const lastId = batch[batch.length - 1].Id;
-      if (lastId === afterId) break; // gardă împotriva buclei
-      all.push(...batch);
-      afterId = lastId;
+      const body = await res.json();
+      const isArray = Array.isArray(body);
+      const events: SeqEvent[] = isArray ? body : (body.Events ?? []);
+      const stats = isArray ? undefined : body.Statistics;
+
+      all.push(...events);
+
+      let next: string | undefined;
+      if (stats) {
+        if (stats.Status !== 'Partial') break; // căutare completă
+        next = stats.LastReadEventId; // continuăm chiar dacă pagina a fost goală
+      } else {
+        next = events[events.length - 1]?.Id; // tablou simplu: fără status
+      }
+      if (!next || next === afterId) break;
+      afterId = next;
     }
     return all;
   }
@@ -215,7 +259,7 @@ export class SeqMlpService {
     fallbackPhone: string,
     eventTimestamp?: string,
   ): Draft | null {
-    // Încearcă să ia locationTime din caz, iar dacă lipsește, folosește timestamp-ul evenimentului din Seq
+    // locationTime din caz; dacă lipsește, timestamp-ul evenimentului din Seq
     const timeUtc =
       this.parseLocationTime(c.locationTime) ??
       (eventTimestamp ? new Date(eventTimestamp).toISOString() : null);
@@ -281,6 +325,7 @@ export class SeqMlpService {
   // "20261022083905" + "+0300" -> "2026-10-22T05:39:05.000Z"
   private toUtcIso(ts: string, offset = '+0000'): string {
     const n = (a: number, b: number) => Number(ts.slice(a, b));
+
     const ms = Date.UTC(
       n(0, 4),
       n(4, 6) - 1,
@@ -289,11 +334,14 @@ export class SeqMlpService {
       n(10, 12),
       n(12, 14),
     );
+
     const sign = offset[0] === '-' ? -1 : 1;
+
     const off =
       sign *
       (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(3, 5))) *
       60_000;
+
     return new Date(ms - off).toISOString();
   }
 }

@@ -20,6 +20,7 @@ export const CaseDetails = ({item, expanded}: Props) => {
     const resetPointOnMap = useStoreAddPointOnMap((s) => s.resetCoordinates);
 
     const caseFolderId = item.caseFolderId;
+    const dateTime = item.created;
 
     // Curățăm harta când se deschide folderul sau se schimbă tabul (fișa)
     useEffect(() => {
@@ -39,7 +40,7 @@ export const CaseDetails = ({item, expanded}: Props) => {
                 <LogsPanel caseFolderId={caseFolderId}/>
                 <OperatorLocationPanel item={item}/>
                 <AudioPanel caseFolderId={caseFolderId}/>
-                <SeqPanel caseFolderId={caseFolderId} phoneNumber={item.phoneNumber}/>
+                <SeqPanel caseFolderId={caseFolderId} phoneNumber={item.phoneNumber} dateTime={dateTime}/>
                 <LocationHistoryPanel caseFolderId={caseFolderId} expanded={expanded}/>
             </Stack>
         </>

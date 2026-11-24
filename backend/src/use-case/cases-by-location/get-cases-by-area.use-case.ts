@@ -90,7 +90,6 @@ export class GetCasesByArea {
     };
 
     const results = await this.getDataByArea(params, query);
-    console.log(results);
 
     const filteredResults: InfoByLocationResponse[] = [];
 

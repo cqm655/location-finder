@@ -3,10 +3,9 @@ import {Button, Paper, Stack, Typography} from "@mui/material";
 import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import {useStoreAddPointOnMap} from "../../store/useStoreAddPointOnMap.ts";
 import {useStoreGeometryFromCaseFolderId} from "../../store/useStoreGeometryFromCaseFolderId.ts";
-import {EMPTY_SEQ_CASE, useStoreSeqSearch} from "../../store/useStoreSeqSearch.ts";
 import type {LocationItem} from "../../connect/types.ts";
+import {EMPTY_SEQ_CASE, seqKey, useStoreSeqSearch} from "../../store/useStoreSeqSearch.ts";
 
-const SEQ_WINDOW_MS = 24 * 60 * 60 * 1000; // caută în ultimele 3 ore
 
 // Singurul loc care decide ce înseamnă X și Y pentru hartă: X = longitudine, Y = latitudine.
 const toMapPoint = ({lon, lat}: LocationItem["center"]) => ({XCoordinate: lat, YCoordinate: lon});
@@ -14,24 +13,51 @@ const toMapPoint = ({lon, lat}: LocationItem["center"]) => ({XCoordinate: lat, Y
 interface Props {
     caseFolderId: number;
     phoneNumber?: string | null;
+    dateTime: string;
 }
 
-export const SeqPanel = ({caseFolderId, phoneNumber}: Props) => {
-    const seq = useStoreSeqSearch((s) => s.byCase[caseFolderId] ?? EMPTY_SEQ_CASE);
+const getDateRange = (created: string | Date) => {
+    const date = created instanceof Date
+        ? created
+        : new Date(
+            created.includes("T")
+                ? created
+                : created.replace(" ", "T") + "Z"
+        );
+
+    if (isNaN(date.getTime())) {
+        console.error("Invalid created date:", created);
+        return null;
+    }
+
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    return {
+        from: new Date(date.getTime() - ONE_DAY).toISOString(),
+        to: new Date(date.getTime() + ONE_DAY).toISOString()
+    };
+};
+
+export const SeqPanel = ({caseFolderId, phoneNumber, dateTime}: Props) => {
+    const key = seqKey(caseFolderId, phoneNumber);
+    const seq = useStoreSeqSearch((s) => s.byKey[key] ?? EMPTY_SEQ_CASE);
     const search = useStoreSeqSearch((s) => s.search);
     const setPointOnMap = useStoreAddPointOnMap((s) => s.setCoordinate);
     const addUniqueGeometries = useStoreGeometryFromCaseFolderId((s) => s.addUniqueFeature);
     const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
     const handleSearch = () => {
-        const phone = phoneNumber?.trim().replace(/\D/g, "").replace(/^0+/, "");
+        const phone = phoneNumber?.trim();
         if (!phone) return;
 
-        const to = new Date();
-        const from = new Date(to.getTime() - SEQ_WINDOW_MS);
+        const range = getDateRange(dateTime);
+
+        if (!range) return;
+
+        const {from, to} = range;
 
         setSelectedIdx(null);
-        void search({caseFolderId, phone, from: from.toISOString(), to: to.toISOString()});
+        void search({caseFolderId, phone, from: from, to: to});
     };
 
     const showOnMap = (index: number, location: LocationItem) => {
@@ -42,6 +68,7 @@ export const SeqPanel = ({caseFolderId, phoneNumber}: Props) => {
             const first = ring[0];
             const last = ring[ring.length - 1];
             if (first[0] !== last[0] || first[1] !== last[1]) ring.push([...first]); // GeoJSON cere inel închis
+
 
             addUniqueGeometries([
                 {
@@ -112,6 +139,7 @@ export const SeqPanel = ({caseFolderId, phoneNumber}: Props) => {
             {!seq.loading && !seq.error && seq.results.length > 0 && (
                 <Stack spacing={1} sx={{mt: 2}}>
                     {seq.results.map((location, index) => (
+
                         <Button
                             key={`${caseFolderId}-seq-${location.kind}-${location.timeUtc}-${index}`}
                             fullWidth
@@ -130,13 +158,14 @@ export const SeqPanel = ({caseFolderId, phoneNumber}: Props) => {
                                 },
                             }}
                         >
-                            {`${location.kind} | ${new Date(location.timeUtc).toLocaleString("ro-RO", {
+
+                            {`${location.kind}${location.source === "phone" ? " (după telefon)" : ""} | ${new Date(location.timeUtc).toLocaleString("ro-RO", {
+                                timeZone: "Europe/Chisinau",
                                 day: "2-digit",
                                 month: "long",
                                 year: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                                second: "2-digit"
                             })}`}
                         </Button>
                     ))}
